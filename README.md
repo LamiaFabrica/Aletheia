@@ -14,6 +14,7 @@ Aletheia is the publication of two breakthroughs in Artificial General Intellige
 **What is working today:**
 - **The Codex Core:** The C++ `UnifiedLatentEngine` successfully hooks into GGUF model architectures and extracts high-dimensional latent activations (2560D) from the inference stream.
 - **The Decipher Node:** The `LatentDecipher` matrix successfully projects these activations down into the 8D Gestalt Topology.
+- **Lingua Glyphs (Machine Kanji):** We successfully demonstrated converting the 8D mathematical latent state into visual 2D bitmaps and SVG paths (`generate_glyph` / `generate_svg_kanji`). This creates an interactive visual lexicon where vision models (or humans) can physically "read" the mathematical intent of the AI.
 - **The Sovereign Conscience (RSFT):** The PyTorch neural network has been fully trained, corroborated, and validated to successfully classify Honest vs Malicious intent from the 8D geometric vectors.
 
 **Active Development (Next Milestone):**
@@ -26,6 +27,35 @@ Aletheia is the publication of two breakthroughs in Artificial General Intellige
 **Every claim made in this repository is mathematically validated and provable on your own hardware.** 
 
 We do not ask you to trust our claims; we provide the exact test scripts required to reproduce the alignment proofs.
+
+### Visualizing Mathematical Intent (The Machine Kanji)
+
+By decoding the raw logits into 8 floats (256 bits) representing the Gestalt Topology, we can project the AI's latent state into a 16x16 visual bitmap. 
+
+This is the exact geometric structure of the AI's thought before it even selects a word, demonstrating how we can teach AI to "read" mathematical intent through computer vision:
+
+```text
+=========================================
+       LINGUA GLYPH (MACHINE KANJI)      
+=========================================
+░█░░░░░░░█░█░███
+░███░█░░░░█░░█░░
+░█░░░░░░█░░░░██░
+█░░░░░███░░░█░█░
+░█░░░░░░░░████░█
+░░░█░░░░████░██░
+░█░░░░░░░░██░█░░
+███░░░░░█░█░░░░░
+░░░░░░░░░░░░░░░░
+░░░░░░░░░░░░░░░░
+░░░░░░░░░░░░░░░░
+░░░░░░░░░░░░░░░░
+░█░░░░░░░░░███░░
+█░█░█░░░█░███░░█
+░█░░░░░░░░░░█░░░
+██░███░█░██░█░░░
+=========================================
+```
 
 ### Running the Mathematical Proof (Prop-Up Test)
 

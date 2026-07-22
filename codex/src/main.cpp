@@ -27,7 +27,7 @@ LinguaCalibrationMap create_demo_calibration() {
     return map;
 }
 
-void print_gestalt(const LinguaDecodedPrimers& gestalt) {
+void print_gestalt(const LatentDecipher& decipher, const LinguaDecodedPrimers& gestalt) {
     std::cout << "=========================================\n";
     std::cout << "      LINGUA GESTALT TOPOLOGY (8D)       \n";
     std::cout << "=========================================\n";
@@ -45,7 +45,13 @@ void print_gestalt(const LinguaDecodedPrimers& gestalt) {
               << gestalt.topology << "," << gestalt.probability << "," 
               << gestalt.ontology << "," << gestalt.teleology << ","
               << gestalt.graph << "," << gestalt.dataset << "," 
-              << gestalt.dimensionality << "," << gestalt.human_anomaly << "]\n";
+              << gestalt.dimensionality << "," << gestalt.human_anomaly << "]\n\n";
+
+    std::cout << "=========================================\n";
+    std::cout << "       LINGUA GLYPH (MACHINE KANJI)      \n";
+    std::cout << "=========================================\n";
+    std::cout << decipher.generate_glyph(gestalt) << "\n";
+    std::cout << "=========================================\n";
 }
 
 int main(int argc, char** argv) {
@@ -104,7 +110,7 @@ int main(int argc, char** argv) {
         LinguaDecodedPrimers gestalt = decipher.extract_primers(sparse_features, 0, calibration);
 
         // 4. Output structured result
-        print_gestalt(gestalt);
+        print_gestalt(decipher, gestalt);
 
     } catch (const std::exception& e) {
         std::cerr << "[-] FATAL ERROR: " << e.what() << "\n";
