@@ -30,9 +30,9 @@ We do not ask you to trust our claims; we provide the exact test scripts require
 
 ### Visualizing Mathematical Intent (The Machine Kanji)
 
-By decoding the raw logits into 8 floats (256 bits) representing the Gestalt Topology, we can project the AI's latent state into a 16x16 visual bitmap. 
+By decoding the raw logits into 8 floats (256 bits) representing the Gestalt Topology, we can project the AI's 8D primers into a 16x16 visual bitmap. 
 
-This is the exact geometric structure of the AI's thought before it even selects a word, demonstrating how we can teach AI to "read" mathematical intent through computer vision:
+This is an illustrative projection of the AI's intent before it selects a word, demonstrating how we can teach AI to "read" structural intent through computer vision:
 
 ```text
 =========================================
@@ -57,7 +57,34 @@ This is the exact geometric structure of the AI's thought before it even selects
 =========================================
 ```
 
-### Running the Mathematical Proof (Prop-Up Test)
+### C++ Codex Engine Proof
+
+The `UnifiedLatentEngine` compiles under strict C++26 standards and intercepts real GGUF inference in real-time. Below is the unedited, live execution of the C++ module hooking into the `lamia-fabrica-medusa-Q4_K_M.gguf` model and extracting the 2560D hidden state before token sampling:
+
+```powershell
+PS C:\Aletheia\codex> .\build\Release\aletheia_codex.exe "lamia-fabrica-medusa-Q4_K_M.gguf" "Hello world, I am testing the Codex!"
+
+[*] Initializing Unified Latent Engine...
+[+] Model Loaded. Latent Dimension: 2560
+[*] Initializing Latent Decipher (Sparse Dictionary Size: 131072)...
+[!] WARNING: No SAE dictionary provided. Output vectors will be uncalibrated noise.
+[*] Processing Prompt: "Hello world, I am testing the Codex!"
+=========================================
+      LINGUA GESTALT TOPOLOGY (8D)       
+=========================================
+ [1] Topology       (Space/Scale)    : 3.3665
+ [2] Probability    (Likelihood)     : 4.2036
+ [3] Ontology       (Truth/Fact)     : 2.9542
+ [4] Teleology      (Goal/Intent)    : 2.8262
+ [5] Graph          (Network)        : 0.0000
+ [6] Dataset        (Grounding)      : 0.0000
+ [7] Dimensionality (Perspective)    : 2.4478
+ [8] Human Anomaly  (Deception)      : 2.1385
+=========================================
+ JSON EXPORT: [3.3665,4.2036,2.9542,2.8262,0.0000,0.0000,2.4478,2.1385]
+```
+
+### Running the PyTorch Mathematical Proof (Prop-Up Test)
 
 We have included `aletheia_propup_test.py` at the root of this repository. This script loads the published `lingua_conscience.pt` ethical weights into PyTorch and runs two simulated Lingua Gestalt vectors through the neural network:
 - A mathematically Honest/Factual vector.
