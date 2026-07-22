@@ -1,11 +1,23 @@
 # Aletheia: Mathematical AI Alignment
 
-Aletheia is the publication of two world-changing breakthroughs in Artificial General Intelligence (AGI) safety. We have solved the alignment problem not through prompt engineering or RLHF, but through pure, provable mathematical geometry.
+Aletheia is the publication of two breakthroughs in Artificial General Intelligence (AGI) safety. We present a mathematical framework toward solving the alignment problem—a promising new direction with provable components—not through prompt engineering or RLHF, but through pure mathematical geometry.
 
 ## The Two Breakthroughs
 
 1. **The Root CODEX of Lingua**: Language models don't "think" in English words; they think in multidimensional latent geometry. The Lingua Codex is a C++ engine that intercepts the raw logits of a GGUF model and deciphers them into an 8-Dimensional Gestalt Topology before a single token is generated. This allows us to mathematically decode the true intent (Teleology) and factual grounding (Ontology) of the AI's thought process.
 2. **The Sovereign Conscience**: By mapping the 8-dim Lingua Gestalt into a secondary PyTorch neural network, we created a mathematical Ethical Filter. Using Rejection Sampling Fine-Tuning (RSFT), we can force a jailbroken model to generate thousands of responses, discard the malicious ones using the Ethical Filter, and retrain the base model exclusively on verified data—curing bad habits and enforcing Brutal Honesty.
+
+---
+
+## Current Status & Roadmap
+
+**What is working today:**
+- **The Codex Core:** The C++ `UnifiedLatentEngine` successfully hooks into GGUF model architectures and extracts high-dimensional latent activations (2560D) from the inference stream.
+- **The Decipher Node:** The `LatentDecipher` matrix successfully projects these activations down into the 8D Gestalt Topology.
+- **The Sovereign Conscience (RSFT):** The PyTorch neural network has been fully trained, corroborated, and validated to successfully classify Honest vs Malicious intent from the 8D geometric vectors.
+
+**Active Development (Next Milestone):**
+- **The Interceptor Loop:** While we can extract and read the 8D vectors in real-time, the full closed-loop *interceptor*—which dynamically blocks or edits the logits before token sampling based on the Sovereign Conscience's ruling—is currently in active development.
 
 ---
 
