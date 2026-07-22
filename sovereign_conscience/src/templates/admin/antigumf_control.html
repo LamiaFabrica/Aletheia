@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AntiGumf Control Panel</title>
+    <link rel="stylesheet" href="/static/css/antigumf_control.css">
+    <script defer src="/static/js/antigumf_control.js"></script>
+</head>
+<body class="antigumf-dark">
+    <div class="antigumf-container">
+        <header class="antigumf-header">
+            <h1><i class="bi bi-shield-shaded"></i> AntiGumf Filtration System</h1>
+            <span class="subtitle">Real-time Data Quality & Filtration Control</span>
+        </header>
+        <section class="antigumf-status" aria-label="AntiGumf Status">
+            <div id="status-card" class="status-card">
+                <!-- Populated by JS -->
+            </div>
+        </section>
+        <section class="antigumf-controls" aria-label="Controls">
+            <div class="toggles">
+                <label class="switch-label" for="global-enable-toggle">AntiGumf Enabled
+                    <input type="checkbox" id="global-enable-toggle" aria-label="Enable AntiGumf">
+                    <span class="slider"></span>
+                </label>
+                <label class="switch-label" for="dedup-toggle">Deduplication
+                    <input type="checkbox" id="dedup-toggle" aria-label="Enable Deduplication">
+                    <span class="slider"></span>
+                </label>
+                <label class="switch-label" for="fuzzy-toggle">Fuzzy Matching
+                    <input type="checkbox" id="fuzzy-toggle" aria-label="Enable Fuzzy Matching">
+                    <span class="slider"></span>
+                </label>
+                <label class="switch-label" for="relevance-toggle">Relevance Scoring
+                    <input type="checkbox" id="relevance-toggle" aria-label="Enable Relevance Scoring">
+                    <span class="slider"></span>
+                </label>
+                <label class="switch-label" for="consistency-toggle">Consistency Check
+                    <input type="checkbox" id="consistency-toggle" aria-label="Enable Consistency Check">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="sliders">
+                <label for="fuzzy-threshold">Fuzzy Similarity Threshold
+                    <input type="range" id="fuzzy-threshold" min="0.5" max="1.0" step="0.01" value="0.9">
+                    <span id="fuzzy-threshold-value">0.90</span>
+                </label>
+                <label for="relevance-threshold">Relevance Score Threshold
+                    <input type="range" id="relevance-threshold" min="0.0" max="1.0" step="0.01" value="0.5">
+                    <span id="relevance-threshold-value">0.50</span>
+                </label>
+            </div>
+            <button id="reload-btn" class="antigumf-btn" aria-label="Reload Rules/Filters">Reload Rules/Filters</button>
+        </section>
+        <section class="antigumf-bulk-import" aria-label="Bulk Config Import">
+            <h2>Bulk Config Import</h2>
+            <form id="bulk-import-form" autocomplete="off">
+                <label for="bulk-import-json">Paste Bulk Config JSON</label>
+                <textarea id="bulk-import-json" rows="10" style="width:100%;font-family:monospace;" aria-label="Bulk Config JSON"></textarea>
+                <button type="submit" class="antigumf-btn">Import Config</button>
+            </form>
+            <div id="bulk-import-result" class="bulk-import-result" style="margin-top:1em;"></div>
+        </section>
+        <section class="antigumf-reprocess" aria-label="Reprocess Quarantined Item">
+            <form id="reprocess-form" autocomplete="off">
+                <label for="reprocess-id">Reprocess Quarantined Item ID</label>
+                <input type="number" id="reprocess-id" min="1" required aria-label="Quarantine Item ID">
+                <button type="submit" class="antigumf-btn">Reprocess</button>
+            </form>
+            <div id="reprocess-result" class="reprocess-result"></div>
+        </section>
+        <section class="antigumf-audit" aria-label="Audit Log">
+            <h2>Audit Log</h2>
+            <div id="audit-log" class="audit-log"></div>
+        </section>
+        <div id="antigumf-toast" class="antigumf-toast" role="status" aria-live="polite" style="display:none;"></div>
+    </div>
+</body>
+</html> 

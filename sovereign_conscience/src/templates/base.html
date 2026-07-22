@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Medusa Control Panel{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: #181828;
+            color: #f3f3f3;
+            font-family: 'Inter', 'Segoe UI', 'Roboto', Arial, sans-serif;
+        }
+        .sidebar {
+            min-height: 100vh;
+            width: 220px;
+            max-width: 220px;
+            background: #232234;
+            padding-top: 2rem;
+            overflow-y: auto;
+            box-shadow: 2px 0 16px #0006;
+        }
+        .sidebar .nav-link {
+            color: #e0d7ff;
+            font-size: 1.1em;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+            position: relative;
+            padding-left: 1.2em;
+        }
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            background: linear-gradient(90deg, #7c3aed 80%, #a259f7 100%);
+            color: #fff;
+            box-shadow: 0 0 8px 2px #a259f7cc;
+            text-shadow: 0 1px 4px #000a;
+        }
+        .sidebar .nav-link.active::before, .sidebar .nav-link:hover::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 32px;
+            border-radius: 3px;
+            background: #a259f7;
+            box-shadow: 0 0 8px #a259f7cc;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.75em;
+            font-size: 1.3em;
+            vertical-align: middle;
+        }
+        .main-content {
+            padding: 2rem;
+            flex-grow: 1;
+            width: 100%;
+        }
+        .card {
+            background: linear-gradient(135deg, #232234 80%, #2d254a 100%);
+            border: 1.5px solid #2d2f36;
+            border-radius: 1.1rem;
+            box-shadow: 0 4px 24px #0007, 0 1.5px 0 #7c3aed44 inset;
+            color: #f3f3f3;
+            transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 32px #a259f755, 0 2px 0 #7c3aed88 inset;
+            border-color: #a259f7;
+            transform: translateY(-2px) scale(1.012);
+        }
+        .card .bi {
+            font-size: 2.5rem;
+            color: #a259f7;
+            filter: drop-shadow(0 0 4px #a259f7cc);
+        }
+        .navbar {
+            background: #232234;
+        }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+        }
+        /* Micro-animations */
+        .sidebar .nav-link, .card {
+            will-change: box-shadow, border-color, transform, background, color;
+        }
+        .sidebar .nav-link:active {
+            filter: brightness(1.1) drop-shadow(0 0 6px #a259f7cc);
+        }
+        .card:active {
+            filter: brightness(1.08) drop-shadow(0 0 8px #a259f7cc);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-nowrap">
+            <nav class="sidebar col-auto px-0">
+                <div class="position-sticky text-center mb-3">
+                    <img src="/static/images/logo.png" alt="Medusa Logo" style="max-width:120px;width:80%;margin-bottom:1.5rem;margin-top:0.5rem;filter: drop-shadow(0 0 8px #a259f7cc);">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'dashboard' %}active{% endif %}" href="/">
+                                <i class="bi bi-house-door"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'crawler' %}active{% endif %}" href="/crawler">
+                                <i class="bi bi-globe2"></i> Crawler
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'scan_results' %}active{% endif %}" href="/scan-results">
+                                <i class="bi bi-shield-check"></i> Scan Results
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'knowledge' %}active{% endif %}" href="/knowledge">
+                                <i class="bi bi-journal-text"></i> Knowledge Base
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'ai_models' %}active{% endif %}" href="/ai-models">
+                                <i class="bi bi-cpu"></i> AI Models
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'visualization' %}active{% endif %}" href="/visualization">
+                                <i class="bi bi-bar-chart"></i> Visualization
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'system' %}active{% endif %}" href="/system">
+                                <i class="bi bi-gear"></i> System Configuration
+                            </a>
+                        </li>
+                        <!-- Admin Section -->
+                        <li class="nav-item mt-3">
+                            <span class="nav-link text-uppercase text-muted small" style="letter-spacing:1px;">Admin</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if page == 'crawler_admin' %}active{% endif %}" href="/crawler-admin">
+                                <i class="bi bi-shield-lock"></i> Crawler Admin
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            <main class="main-content col ps-3 pe-0 flex-grow-1">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize SocketIO connection
+        const baseSocket = io();
+
+        // Handle real-time updates
+        baseSocket.on('crawl_started', function(data) {
+            showToast('Crawl Started', `Started crawling ${data.source}`, 'info');
+        });
+
+        baseSocket.on('crawl_complete', function(data) {
+            showToast('Crawl Complete', `Finished crawling ${data.source}`, 'success');
+        });
+
+        baseSocket.on('crawl_error', function(data) {
+            showToast('Crawl Error', data.error, 'danger');
+        });
+
+        baseSocket.on('scan_started', function(data) {
+            showToast('Scan Started', `Started scanning ${data.target}`, 'info');
+        });
+
+        baseSocket.on('scan_complete', function(data) {
+            showToast('Scan Complete', `Finished scanning ${data.target}`, 'success');
+        });
+
+        baseSocket.on('scan_error', function(data) {
+            showToast('Scan Error', data.error, 'danger');
+        });
+
+        baseSocket.on('model_training_started', function(data) {
+            showToast('Training Started', `Started training ${data.model_type} model`, 'info');
+        });
+
+        baseSocket.on('model_training_complete', function(data) {
+            showToast('Training Complete', `Finished training ${data.model_type} model`, 'success');
+        });
+
+        baseSocket.on('model_training_error', function(data) {
+            showToast('Training Error', data.error, 'danger');
+        });
+
+        baseSocket.on('system_status_update', function(data) {
+            // Update system status indicators if they exist
+            const dbStatus = document.getElementById('dbStatus');
+            const modelStatus = document.getElementById('modelStatus');
+            const resourceStatus = document.getElementById('resourceStatus');
+
+            if (dbStatus) {
+                dbStatus.textContent = data.database;
+                dbStatus.className = `badge bg-${getStatusColor(data.database)}`;
+            }
+            if (modelStatus) {
+                modelStatus.textContent = data.models;
+                modelStatus.className = `badge bg-${getStatusColor(data.models)}`;
+            }
+            if (resourceStatus) {
+                resourceStatus.textContent = data.resources;
+                resourceStatus.className = `badge bg-${getStatusColor(data.resources)}`;
+            }
+        });
+
+        // Helper function to show toast notifications
+        function showToast(title, message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast bg-${type} text-white`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+            
+            toast.innerHTML = `
+                <div class="toast-header bg-${type} text-white">
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove toast after it's hidden
+            toast.addEventListener('hidden.bs.toast', function() {
+                toast.remove();
+            });
+        }
+
+        // Helper function to get status color
+        function getStatusColor(status) {
+            switch (status.toLowerCase()) {
+                case 'connected':
+                case 'active':
+                case 'normal':
+                    return 'success';
+                case 'training':
+                case 'warning':
+                    return 'warning';
+                case 'disconnected':
+                case 'error':
+                case 'critical':
+                    return 'danger';
+                default:
+                    return 'secondary';
+            }
+        }
+    </script>
+</body>
+</html> 

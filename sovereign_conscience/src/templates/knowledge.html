@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge Base - Medusa{% endblock %}
+{% set page = 'knowledge' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Knowledge Base</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search knowledge base...">
+                <button class="btn btn-primary" type="button" onclick="searchKnowledge()">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+                <option value="">All Categories</option>
+                <option value="scan_examples">Scan Examples</option>
+                <option value="security_concepts">Security Concepts</option>
+                <option value="tool_usage">Tool Usage</option>
+                <option value="best_practices">Best Practices</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Categories</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('scan_examples')">
+                            <i class="bi bi-search"></i> Scan Examples
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('security_concepts')">
+                            <i class="bi bi-shield"></i> Security Concepts
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('tool_usage')">
+                            <i class="bi bi-tools"></i> Tool Usage
+                        </a>
+                        <a href="#" class="list-group-item list-group-item-action" onclick="filterByCategory('best_practices')">
+                            <i class="bi bi-check-circle"></i> Best Practices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div id="knowledgeEntries" class="row row-cols-1 row-cols-md-2 g-4">
+                <!-- Knowledge entries will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function loadKnowledge(category = '') {
+    try {
+        const url = category ? `/api/knowledge/${category}` : '/api/knowledge';
+        const response = await fetch(url);
+        const data = await response.json();
+        const container = document.getElementById('knowledgeEntries');
+        container.innerHTML = '';
+        
+        for (const [cat, entries] of Object.entries(data)) {
+            for (const entry of entries) {
+                const col = document.createElement('div');
+                col.className = 'col';
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">${entry.title}</h5>
+                            <p class="card-text">${entry.content.substring(0, 150)}...</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">${new Date(entry.timestamp).toLocaleDateString()}</small>
+                                <a href="${entry.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-box-arrow-up-right"></i> Source
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(col);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+function searchKnowledge() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+    
+    // TODO: Implement search functionality
+    alert('Search functionality not implemented yet');
+}
+
+function filterByCategory(category = '') {
+    const select = document.getElementById('categoryFilter');
+    if (category) {
+        select.value = category;
+    } else {
+        category = select.value;
+    }
+    loadKnowledge(category);
+}
+
+// Load all knowledge entries on page load
+loadKnowledge();
+</script>
+{% endblock %} 

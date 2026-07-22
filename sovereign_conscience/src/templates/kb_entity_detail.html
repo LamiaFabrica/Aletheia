@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Entity Detail - Medusa{% endblock %}
+{% block content %}
+<div class="container-fluid" style="margin-top:2rem;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb" style="background:none;padding-left:0;">
+            <li class="breadcrumb-item"><a href="/knowledge_base" style="color:#a259f7;">Knowledge Base</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Entity Detail</li>
+        </ol>
+    </nav>
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div id="entity-header" class="mb-4"></div>
+            <div id="entity-null-explanation" style="display:none;"></div>
+            <div class="row g-4" id="entity-detail-cards">
+                <div class="col-md-7">
+                    <div class="card mb-4" id="overview-card" style="box-shadow:0 4px 24px #a259f733;">
+                        <div class="card-body">
+                            <h5 class="card-title"><span class="bi bi-info-circle" style="color:#a259f7;"></span> Overview</h5>
+                            <div id="entity-overview"></div>
+                        </div>
+                    </div>
+                    <div class="card mb-4" id="remediation-card" style="box-shadow:0 4px 24px #00e0ff33;">
+                        <div class="card-body">
+                            <h5 class="card-title"><span class="bi bi-tools" style="color:#00e0ff;"></span> Remediation</h5>
+                            <div id="entity-remediation"></div>
+                        </div>
+                    </div>
+                    <div class="card mb-4" id="media-card" style="box-shadow:0 4px 24px #a259f733;">
+                        <div class="card-body">
+                            <h5 class="card-title"><span class="bi bi-youtube" style="color:#ff0000;"></span> Media</h5>
+                            <div id="entity-media"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card mb-4" id="notes-card" style="box-shadow:0 4px 24px #a259f733;">
+                        <div class="card-body">
+                            <h5 class="card-title"><span class="bi bi-pencil-square" style="color:#a259f7;"></span> Operator Notes</h5>
+                            <div id="entity-notes"></div>
+                        </div>
+                    </div>
+                    <div class="card mb-4" id="related-card" style="box-shadow:0 4px 24px #00e0ff33;">
+                        <div class="card-body">
+                            <h5 class="card-title"><span class="bi bi-link-45deg" style="color:#00e0ff;"></span> Related</h5>
+                            <div id="entity-related"></div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-warning" id="report-btn"><span class="bi bi-flag"></span> Report / Request Update</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Add section for all fields, timestamps, and raw JSON -->
+            <div class="card mb-4" id="raw-json-card" style="box-shadow:0 4px 24px #a259f733;">
+                <div class="card-body">
+                    <h5 class="card-title"><span class="bi bi-code-slash" style="color:#a259f7;"></span> Raw Data</h5>
+                    <pre id="entity-raw-json" style="background:#181a20;color:#fff;padding:1rem;border-radius:0.7rem;overflow-x:auto;"></pre>
+                </div>
+            </div>
+            {% if current_user.is_admin %}
+            <div class="mb-3 d-flex gap-2">
+                <button class="btn btn-warning" onclick="showEditEntryModal()"><i class="bi bi-pencil"></i> Edit Entry</button>
+                <button class="btn btn-danger" onclick="confirmDeleteEntry()"><i class="bi bi-trash"></i> Delete Entry</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<style>
+#entity-header {
+    background: linear-gradient(90deg,#a259f7 0%,#00e0ff 100%);
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 2rem 2.5rem 1.2rem 2.5rem;
+    box-shadow: 0 4px 24px #a259f744;
+    margin-bottom: 2rem;
+}
+#entity-header .entity-type {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #fff;
+    opacity: 0.85;
+}
+#entity-header .entity-id {
+    font-size: 2.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-right: 1.2rem;
+}
+#entity-header .entity-severity {
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.7rem;
+    padding: 0.3rem 1.1rem;
+    margin-left: 0.7rem;
+    background: #23243a;
+    color: #fff;
+    display: inline-block;
+}
+#entity-null-explanation {
+    background: linear-gradient(90deg,#23243a 0%,#a259f7 100%);
+    color: #fff;
+    border-radius: 1.2rem;
+    padding: 2rem 2.5rem 1.2rem 2.5rem;
+    box-shadow: 0 4px 24px #a259f744;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.25rem;
+}
+#entity-null-explanation .btn {
+    margin-top: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: linear-gradient(90deg,#a259f7 0%,#00e0ff 100%);
+    border: none;
+    color: #fff;
+    box-shadow: 0 2px 12px #a259f744;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const entityType = '{{ entity_type }}';
+    const entityId = '{{ entity_id }}';
+    fetch(`/api/kb/entity/${entityType}/${entityId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'success' || !data.entity || !data.entity.fields || Object.keys(data.entity.fields).length === 0) {
+                // Show null explanation
+                document.getElementById('entity-detail-cards').style.display = 'none';
+                document.getElementById('entity-null-explanation').style.display = '';
+                let typeLabel = (entityType === 'tool') ? 'tool' : (entityType === 'cve' ? 'vulnerability' : 'entity');
+                document.getElementById('entity-null-explanation').innerHTML = `
+                    <div><span class="bi bi-exclamation-triangle" style="font-size:2.5rem;color:#ffd700;"></span></div>
+                    <div class="mt-3">This ${typeLabel} has not been crawled yet.<br>Want to help? Request it be searched ASAP!</div>
+                    <button class="btn btn-lg mt-4" id="null-report-btn"><span class="bi bi-flag"></span> Request Search / Crawl</button>
+                `;
+                document.getElementById('null-report-btn').onclick = function() {
+                    fetch(`/api/kb/entity/${entityType}/${entityId}/report`, {method:'POST',credentials:'include'})
+                        .then(r=>r.json()).then(data=>{
+                            if(data.status==='success'){
+                                this.textContent = 'Requested!';
+                                this.classList.remove('btn-primary');
+                                this.classList.add('btn-success');
+                            }
+                        });
+                };
+                return;
+            }
+            // Normal entity detail rendering (existing logic)
+            document.getElementById('entity-null-explanation').style.display = 'none';
+            document.getElementById('entity-detail-cards').style.display = '';
+            const entity = data.entity;
+            // Header
+            document.getElementById('entity-header').innerHTML = `
+                <div class="entity-type">${entity.entity_type ? entity.entity_type.toUpperCase() : ''}</div>
+                <div class="d-flex align-items-center mt-2">
+                    <span class="entity-id">${entity.entity_id}</span>
+                    <span class="entity-severity" style="background:${severityColor(entity.fields.severity)};">${entity.fields.severity || ''}</span>
+                </div>
+                <div class="mt-2" style="font-size:1.2rem;">${entity.fields.description || ''}</div>
+            `;
+            // Overview
+            let overview = '<dl class="row">';
+            for (const [k,v] of Object.entries(entity.fields)) {
+                if (k === 'description' || k === 'severity') continue;
+                overview += `<dt class="col-sm-4" style="color:#a259f7;">${k}</dt><dd class="col-sm-8">${v}</dd>`;
+            }
+            overview += '</dl>';
+            document.getElementById('entity-overview').innerHTML = overview;
+            // Remediation
+            document.getElementById('entity-remediation').innerHTML = entity.remediation || '<span class="text-muted">No remediation info yet.</span>';
+            // Media
+            if (entity.media && entity.media.length) {
+                let mediaHtml = '';
+                for (const m of entity.media) {
+                    if (m.type === 'youtube') {
+                        mediaHtml += `<div class='mb-3'><iframe width='100%' height='260' src='https://www.youtube.com/embed/${m.id}' frameborder='0' allowfullscreen></iframe></div>`;
+                    } else if (m.type === 'twitter') {
+                        mediaHtml += `<div class='mb-3'><blockquote class='twitter-tweet'><a href='${m.url}'></a></blockquote></div>`;
+                    }
+                }
+                document.getElementById('entity-media').innerHTML = mediaHtml;
+            } else {
+                document.getElementById('entity-media').innerHTML = '<span class="text-muted">No media found.</span>';
+            }
+            // Notes
+            document.getElementById('entity-notes').innerHTML = (entity.notes && entity.notes.length) ? entity.notes.map(n => `<div class='mb-2'><span class='bi bi-person-circle'></span> ${n}</div>`).join('') : '<span class="text-muted">No operator notes yet.</span>';
+            // Related
+            document.getElementById('entity-related').innerHTML = (entity.related_links && entity.related_links.length) ? entity.related_links.map(l => `<div><a href='${l.url}' target='_blank' style='color:#00e0ff;'>${l.title || l.url}</a></div>`).join('') : '<span class="text-muted">No related links yet.</span>';
+            // Raw JSON
+            document.getElementById('entity-raw-json').innerHTML = JSON.stringify(entity, null, 2);
+        });
+    document.getElementById('report-btn').addEventListener('click', function() {
+        fetch(`/api/kb/entity/${entityType}/${entityId}/report`, {method:'POST',credentials:'include'})
+            .then(r=>r.json()).then(data=>{
+                if(data.status==='success'){
+                    this.textContent = 'Reported!';
+                    this.classList.remove('btn-warning');
+                    this.classList.add('btn-success');
+                }
+            });
+    });
+});
+function severityColor(sev) {
+    if (!sev) return '#23243a';
+    if (sev.toUpperCase().includes('CRIT')) return '#ff0033';
+    if (sev.toUpperCase().includes('HIGH')) return '#ff9900';
+    if (sev.toUpperCase().includes('MED')) return '#ffd700';
+    if (sev.toUpperCase().includes('LOW')) return '#00e0ff';
+    return '#23243a';
+}
+</script>
+<!--
+Future Enhancements:
+- Geo map of affected hosts/regions
+- Voting, upvote/downvote, "Was this helpful?"
+- Add/edit operator notes
+- More media types (TikTok, LinkedIn, etc.)
+- Timeline/history of entity
+- Related entity graph
+-->
+{% endblock %} 

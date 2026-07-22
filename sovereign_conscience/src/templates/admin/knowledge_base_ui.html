@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medusa - Knowledge Base UI</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.21/css/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 20px; }
+        .container { max-width: 95%; }
+        .table-responsive { margin-top: 20px; }
+        h2 { margin-top: 30px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Medusa - Knowledge Base & Crawler UI</h1>
+            <a href="/" class="btn btn-info">Back to Main Dashboard</a>
+        </div>
+
+        <!-- Tools Table Section -->
+        <section id="tools-section">
+            <h2>Tools</h2>
+            <div class="table-responsive">
+                <table id="toolsTable" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tool Name</th>
+                            <th>Description</th>
+                            <th>Operating System</th>
+                            <th>Medusa ID</th>
+                            <!-- Add other relevant tool columns from 'allowed_tables' -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Vulnerabilities Table Section -->
+        <section id="vulnerabilities-section">
+            <h2>Vulnerabilities (CVEs)</h2>
+            <div class="table-responsive">
+                <table id="vulnerabilitiesTable" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Medusa ID</th>
+                            <th>CVE ID</th>
+                            <th>State</th>
+                            <th>Assigner</th>
+                            <th>Published</th>
+                            <th>Updated</th>
+                            <th>Description</th>
+                            <th>Score</th>
+                            <th>Vector</th>
+                            <th>Severity</th>
+                            <!-- Add other relevant vulnerability columns from 'allowed_tables' -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Crawler Tool Queue Section -->
+        <section id="crawler-queue-section">
+            <h2>Crawler Tool Queue</h2>
+            <div class="table-responsive">
+                <table id="crawlerQueueTable" class="table table-striped table-bordered" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tool Name</th>
+                            <th>Target URL</th>
+                            <th>Status</th>
+                            <th>Parser Hint</th>
+                            <th>Last Crawled At</th>
+                            <th>Priority</th>
+                            <th>Completion %</th>
+                            <!-- Add other relevant queue columns -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.21/js/dataTables.bootstrap4.min.js"></script>
+    <script src="{{ url_for('static', filename='js/knowledge_base_ui.js') }}"></script>
+</body>
+</html> 

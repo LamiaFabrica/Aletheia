@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+{% block title %}Crawler Admin - Medusa{% endblock %}
+{% set page = 'crawler_admin' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4" style="color:#a259f7;font-weight:700;letter-spacing:0.5px;">Crawler Admin Dashboard <span class="badge bg-warning text-dark ms-2">God Mode</span></h2>
+    <!-- Crawler Settings Card (God Mode) -->
+    <div class="card mb-4" id="crawlerSettingsCard" style="box-shadow: 0 4px 24px #7c3aed33, 0 1.5px 0 #a259f744 inset; border: 1.5px solid #2d2f36;">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <span class="bi bi-gear-fill" style="font-size:1.7rem;color:#a259f7;margin-right:0.7rem;filter:drop-shadow(0 0 6px #a259f7cc);"></span>
+                <h5 class="card-title mb-0" style="color:#a259f7;font-weight:600;letter-spacing:0.5px;">Crawler Settings (God Mode)</h5>
+            </div>
+            <form id="crawlerSettingsForm" class="mb-3">
+                <fieldset class="mb-3" style="border-left:3px solid #a259f7;padding-left:1rem;">
+                    <legend class="mb-2" style="font-size:1.1rem;color:#a259f7;font-weight:500;">Core Settings</legend>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="indefiniteMode" name="indefinite_mode">
+                        <label class="form-check-label" for="indefiniteMode" style="font-weight:500;color:#a259f7;">
+                            Indefinite Crawl Mode
+                            <span tabindex="0" data-bs-toggle="tooltip" title="When enabled, the crawler will continue until all pages are exhausted, auto-restarting if interrupted, and resuming after system restarts. Max Depth/Pages are ignored. Stops only if too many consecutive errors occur." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                    </div>
+                    <div id="indefiniteInfo" class="mb-3" style="display:none;color:#00e0ff;font-size:0.97em;">
+                        Indefinite Mode is <b>ON</b>: Max Depth and Max Pages are ignored. Crawler will auto-resume after interruptions. <br>
+                        <span style="color:#ffc107;">Stops only if too many consecutive errors occur.</span>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="userAgent" class="form-label">User-Agent String
+                            <span tabindex="0" data-bs-toggle="tooltip" title="The HTTP User-Agent sent with each request. Identifies the crawler to servers." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                        <input type="text" class="form-control" id="userAgent" name="user_agent" value="MedusaCrawler/1.0 (+https://github.com/yourusername/medusa)" autocomplete="off">
+                        <span class="badge bg-secondary ms-2" style="font-size:0.8em;vertical-align:middle;" tabindex="0" data-bs-toggle="tooltip" title="Applied immediately">Live</span>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="politenessDelay" class="form-label">Politeness Delay (seconds)
+                            <span tabindex="0" data-bs-toggle="tooltip" title="Minimum delay between requests to the same server. Helps avoid overloading sites." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                        <input type="number" class="form-control" id="politenessDelay" name="politeness_delay" value="3" min="1" max="60">
+                        <span class="badge bg-secondary ms-2" style="font-size:0.8em;vertical-align:middle;" tabindex="0" data-bs-toggle="tooltip" title="Applied immediately">Live</span>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="maxDepth" class="form-label">Max Depth
+                            <span tabindex="0" data-bs-toggle="tooltip" title="How many links deep the crawler will follow from the starting page." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="maxDepth" name="max_depth" value="3" min="1" max="10">
+                            <div class="input-group-text">
+                                <input type="checkbox" id="unlimitedDepth" style="margin-right:0.4em;">
+                                <label for="unlimitedDepth" style="margin-bottom:0;user-select:none;">Unlimited</label>
+                            </div>
+                        </div>
+                        <span class="badge bg-secondary ms-2" style="font-size:0.8em;vertical-align:middle;" tabindex="0" data-bs-toggle="tooltip" title="Requires restart to take effect">Restart</span>
+                    </div>
+                    <div class="mb-3 position-relative">
+                        <label for="maxPages" class="form-label">Max Pages
+                            <span tabindex="0" data-bs-toggle="tooltip" title="Maximum number of pages to crawl in a single job." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                        <input type="number" class="form-control" id="maxPages" name="max_pages" value="1000" min="1">
+                        <span class="badge bg-secondary ms-2" style="font-size:0.8em;vertical-align:middle;" tabindex="0" data-bs-toggle="tooltip" title="Requires restart to take effect">Restart</span>
+                    </div>
+                    <div class="mb-3 position-relative" id="maxErrorsGroup" style="display:none;">
+                        <label for="maxConsecutiveErrors" class="form-label">Max Consecutive Errors
+                            <span tabindex="0" data-bs-toggle="tooltip" title="If this many errors happen in a row, the crawl will stop and alert the operator. Default: 10." style="cursor:help;color:#a259f7;margin-left:0.3em;"><i class="bi bi-info-circle"></i></span>
+                        </label>
+                        <input type="number" class="form-control" id="maxConsecutiveErrors" name="max_consecutive_errors" value="10" min="1" max="100">
+                        <span class="badge bg-secondary ms-2" style="font-size:0.8em;vertical-align:middle;" tabindex="0" data-bs-toggle="tooltip" title="Stops crawl if exceeded">Limit</span>
+                    </div>
+                </fieldset>
+                <button type="submit" class="btn" id="saveSettingsBtn" style="background:#a259f7;color:#fff;font-weight:500;box-shadow:0 0 8px #a259f7cc;transition:box-shadow 0.18s,background 0.18s;">Save Settings</button>
+                <span id="settingsSavedMsg" class="ms-3" style="color:#00e0ff;font-weight:500;display:none;">Settings saved!</span>
+            </form>
+        </div>
+    </div>
+    <!-- Crawl Queue Management Card (God Mode) -->
+    <div class="card mb-4" id="queueManagementCard" style="box-shadow: 0 4px 24px #a259f733, 0 1.5px 0 #a259f744 inset; border: 1.5px solid #2d2f36;">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <span class="bi bi-list-task" style="font-size:1.7rem;color:#a259f7;margin-right:0.7rem;"></span>
+                <h4 class="mb-0" style="color:#a259f7;font-weight:600;">Crawl Queue Management</h4>
+                <button class="btn btn-sm ms-auto" style="background:#a259f7;color:#fff;font-weight:500;box-shadow:0 0 8px #a259f7cc;" data-bs-toggle="modal" data-bs-target="#addQueueItemModal"><i class="bi bi-plus-circle"></i> Add Tool</button>
+            </div>
+            <div id="queueTableContainer">
+                <div class="text-muted">Loading queue...</div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Queue Item Modal -->
+    <div class="modal fade" id="addQueueItemModal" tabindex="-1" aria-labelledby="addQueueItemModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background:#232234;color:#f3f3f3;">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addQueueItemModalLabel">Add Tool to Queue</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="addQueueItemForm">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="queueToolName" class="form-label">Tool Name</label>
+                <input type="text" class="form-control" id="queueToolName" name="tool_name" required>
+              </div>
+              <div class="mb-3">
+                <label for="queueTargetUrl" class="form-label">Target URL</label>
+                <input type="url" class="form-control" id="queueTargetUrl" name="target_url" required>
+              </div>
+              <div class="mb-3">
+                <label for="queueParserHint" class="form-label">Parser Hint</label>
+                <input type="text" class="form-control" id="queueParserHint" name="parser_hint">
+              </div>
+              <div class="mb-3">
+                <label for="queuePriority" class="form-label">Priority</label>
+                <input type="number" class="form-control" id="queuePriority" name="priority" value="0">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Add Tool</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Edit Queue Item Modal (populated dynamically) -->
+    <div class="modal fade" id="editQueueItemModal" tabindex="-1" aria-labelledby="editQueueItemModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background:#232234;color:#f3f3f3;">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editQueueItemModalLabel">Edit Queue Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="editQueueItemForm">
+            <div class="modal-body" id="editQueueItemFormBody">
+              <!-- Populated by JS -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Plugin Management Card -->
+    <div class="card mb-4" id="pluginManagementCard">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <span class="bi bi-puzzle" style="font-size:1.7rem;color:#7c3aed;margin-right:0.7rem;"></span>
+                <h4 class="mb-0" style="color:#7c3aed;font-weight:600;">Plugin Management</h4>
+                <button class="btn btn-sm ms-auto" style="background:#a259f7;color:#fff;font-weight:500;box-shadow:0 0 8px #a259f7cc;" data-bs-toggle="modal" data-bs-target="#addPluginModal"><i class="bi bi-plus-circle"></i> Add Plugin</button>
+            </div>
+            <div id="pluginTableContainer">
+                <div class="text-muted">Loading plugins...</div>
+            </div>
+        </div>
+    </div>
+    <!-- Add Plugin Modal -->
+    <div class="modal fade" id="addPluginModal" tabindex="-1" aria-labelledby="addPluginModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background:#232234;color:#f3f3f3;">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addPluginModalLabel">Add New Plugin</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="addPluginForm">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="pluginName" class="form-label">Plugin Name</label>
+                <input type="text" class="form-control" id="pluginName" name="plugin_name" required>
+              </div>
+              <div class="mb-3">
+                <label for="pluginType" class="form-label">Plugin Type</label>
+                <input type="text" class="form-control" id="pluginType" name="plugin_type" value="parser" required>
+              </div>
+              <div class="mb-3">
+                <label for="modulePath" class="form-label">Module Path</label>
+                <input type="text" class="form-control" id="modulePath" name="module_path" placeholder="tool_crawler.parsers.my_plugin" required>
+              </div>
+              <div class="mb-3">
+                <label for="pluginVersion" class="form-label">Version</label>
+                <input type="text" class="form-control" id="pluginVersion" name="version">
+              </div>
+              <div class="mb-3">
+                <label for="pluginDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="pluginDescription" name="description"></textarea>
+              </div>
+              <div class="mb-3">
+                <label for="pluginStatus" class="form-label">Status</label>
+                <select class="form-select" id="pluginStatus" name="status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Add Plugin</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Edit Plugin Modal (populated dynamically) -->
+    <div class="modal fade" id="editPluginModal" tabindex="-1" aria-labelledby="editPluginModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content" style="background:#232234;color:#f3f3f3;">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editPluginModalLabel">Edit Plugin</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form id="editPluginForm">
+            <div class="modal-body" id="editPluginFormBody">
+              <!-- Populated by JS -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Database Tools/Admin Card -->
+    <div class="card mb-4" id="dbToolsCard" style="box-shadow: 0 4px 24px #00e0ff33, 0 1.5px 0 #00e0ff44 inset; border: 1.5px solid #2d2f36;">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <span class="bi bi-database" style="font-size:1.7rem;color:#00e0ff;margin-right:0.7rem;"></span>
+                <h4 class="mb-0" style="color:#00e0ff;font-weight:600;">Database Tools / Admin</h4>
+            </div>
+            <div class="row" id="dbTableHealthRows"></div>
+            <div class="d-flex align-items-center mt-4">
+                <button class="btn btn-primary me-3" id="runDbAuditBtn"><span class="bi bi-shield-check"></span> Run Schema Audit / Fix</button>
+                <div id="dbAuditProgress" class="flex-grow-1"></div>
+            </div>
+        </div>
+    </div>
+    <div class="alert alert-info mt-4">
+        <strong>Note:</strong> This section is for advanced operators/admins only. All actions are logged and may impact system operation.
+    </div>
+</div>
+<!-- Ensure Socket.IO client is loaded before any custom JS -->
+<script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+<script>
+// --- Crawl Queue Management ---
+async function fetchQueue() {
+    const res = await fetch('/api/crawler/queue', { credentials: 'include' });
+    const data = await res.json();
+    if (data.status !== 'success') throw new Error(data.message || 'Failed to load queue');
+    return data.data;
+}
+function renderQueueTable(queue) {
+    let html = `<button class="btn btn-sm btn-secondary mb-2" onclick="loadQueue()">Refresh</button>`;
+    if (!queue.length) {
+        html += '<div class="text-muted">Queue is empty.</div>';
+    } else {
+        html += `<table class="table table-sm table-dark table-striped align-middle"><thead><tr>` +
+            `<th>ID</th><th>Name</th><th>URL</th><th>Status</th><th>%</th><th>Recrawl</th><th>Priority</th><th>Parser</th><th></th></tr></thead><tbody>`;
+        for (const tool of queue) {
+            html += `<tr>` +
+                `<td>${tool.id}</td>` +
+                `<td>${tool.tool_name}</td>` +
+                `<td style="max-width:180px;overflow-x:auto;">${tool.target_url || ''}</td>` +
+                `<td>${tool.status}</td>` +
+                `<td>${tool.completion_percentage}</td>` +
+                `<td>${tool.force_recrawl_flag ? 'Yes' : 'No'}</td>` +
+                `<td>${tool.priority}</td>` +
+                `<td>${tool.parser_hint || ''}</td>` +
+                `<td><button class="btn btn-sm btn-danger" onclick="confirmRemoveTool(${tool.id}, '${tool.tool_name}')">Remove</button></td>` +
+                `</tr>`;
+        }
+        html += '</tbody></table>';
+    }
+    document.getElementById('queueTableContainer').innerHTML = html;
+}
+async function loadQueue() {
+    try {
+        const queue = await fetchQueue();
+        renderQueueTable(queue);
+    } catch (e) {
+        document.getElementById('queueTableContainer').innerHTML = `<div class='text-danger'>${e.message}</div>`;
+    }
+}
+window.confirmRemoveTool = function(id, name) {
+    if (confirm(`Are you sure you want to remove '${name}' (ID ${id}) from the crawl queue?`)) {
+        removeTool(id, name);
+    }
+}
+async function removeTool(id, name) {
+    try {
+        const res = await fetch(`/api/crawler/queue/${id}`, { method: 'DELETE', credentials: 'include' });
+        const data = await res.json();
+        if (data.status === 'removed') {
+            alert(`Tool '${name}' removed from queue.`);
+            loadQueue();
+        } else {
+            alert(`Failed to remove tool: ${data.message || data.error || JSON.stringify(data)}`);
+        }
+    } catch (e) {
+        alert('Failed to remove tool: ' + e.message);
+    }
+}
+// Add Tool Modal Form
+const addQueueItemForm = document.getElementById('addQueueItemForm');
+addQueueItemForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    try {
+        const res = await fetch('/api/crawler/queue/add_tool', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            alert('Tool added to queue.');
+            addQueueItemForm.reset();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addQueueItemModal')).hide();
+            loadQueue();
+        } else {
+            alert(result.message || JSON.stringify(result));
+        }
+    } catch (e) {
+        alert('Failed to add tool: ' + e.message);
+    }
+});
+document.addEventListener('DOMContentLoaded', function() {
+    loadQueue();
+    const maxDepthInput = document.getElementById('maxDepth');
+    const unlimitedDepthCheckbox = document.getElementById('unlimitedDepth');
+    let lastDepthValue = maxDepthInput.value;
+    unlimitedDepthCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            lastDepthValue = maxDepthInput.value;
+            maxDepthInput.value = 0;
+            maxDepthInput.disabled = true;
+            maxDepthInput.classList.add('bg-secondary');
+        } else {
+            maxDepthInput.value = lastDepthValue || 3;
+            maxDepthInput.disabled = false;
+            maxDepthInput.classList.remove('bg-secondary');
+        }
+    });
+});
+// --- Plugin Management JS ---
+async function fetchPlugins() {
+    const res = await fetch('/api/plugins/parsers', { credentials: 'include' });
+    const data = await res.json();
+    if (data.status === 'success') {
+        return data.data;
+    } else {
+        throw new Error(data.message || 'Failed to fetch plugins');
+    }
+}
+function renderPluginTable(plugins) {
+    let html = `<table class="table table-dark table-striped align-middle" style="background:#232234;">
+        <thead><tr>
+            <th>Name</th><th>Type</th><th>Module Path</th><th>Status</th><th>Version</th><th>Description</th><th>Actions</th>
+        </tr></thead><tbody>`;
+    for (const plugin of plugins) {
+        html += `<tr>
+            <td>${plugin.name || plugin.plugin_name || 'N/A'}</td>
+            <td>parser</td>
+            <td>${plugin.module_path || ''}</td>
+            <td><span class="badge bg-${plugin.status === 'enabled' ? 'success' : 'secondary'}">${plugin.status || ''}</span></td>
+            <td>${plugin.version || ''}</td>
+            <td>${plugin.description || ''}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="showEditPluginModal('${plugin.name || plugin.plugin_name}')"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger me-1" onclick="deletePlugin('${plugin.name || plugin.plugin_name}')"><i class="bi bi-trash"></i></button>
+                <button class="btn btn-sm btn-outline-${plugin.status === 'enabled' ? 'secondary' : 'success'}" onclick="togglePluginStatus('${plugin.name || plugin.plugin_name}', '${plugin.status}')">
+                    <i class="bi bi-toggle-${plugin.status === 'enabled' ? 'on' : 'off'}"></i>
+                </button>
+            </td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    document.getElementById('pluginTableContainer').innerHTML = html;
+}
+async function loadPlugins() {
+    try {
+        const plugins = await fetchPlugins();
+        renderPluginTable(plugins);
+    } catch (e) {
+        document.getElementById('pluginTableContainer').innerHTML = `<div class='text-danger'>${e.message}</div>`;
+    }
+}
+loadPlugins();
+// Add Plugin
+const addPluginForm = document.getElementById('addPluginForm');
+addPluginForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    try {
+        const res = await fetch('/api/plugins/parsers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            loadPlugins();
+            addPluginForm.reset();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('addPluginModal')).hide();
+        } else {
+            alert(result.message || JSON.stringify(result.data));
+        }
+    } catch (e) {
+        alert('Failed to add plugin: ' + e.message);
+    }
+});
+// Edit Plugin
+function showEditPluginModal(id) {
+    fetch(`/api/plugins/parsers`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+            const plugin = data.data.find(p => p.id === id);
+            if (!plugin) return;
+            document.getElementById('editPluginFormBody').innerHTML = `
+                <input type="hidden" name="id" value="${plugin.id}">
+                <div class="mb-3">
+                    <label class="form-label">Plugin Name</label>
+                    <input type="text" class="form-control" name="plugin_name" value="${plugin.plugin_name}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Plugin Type</label>
+                    <input type="text" class="form-control" name="plugin_type" value="${plugin.plugin_type}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Module Path</label>
+                    <input type="text" class="form-control" name="module_path" value="${plugin.module_path}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Version</label>
+                    <input type="text" class="form-control" name="version" value="${plugin.version || ''}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" name="description">${plugin.description || ''}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="active" ${plugin.status === 'active' ? 'selected' : ''}>Active</option>
+                        <option value="inactive" ${plugin.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
+            `;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editPluginModal')).show();
+        });
+}
+document.getElementById('editPluginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    const id = data.id;
+    delete data.id;
+    try {
+        const res = await fetch(`/api/plugins/parsers/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            loadPlugins();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editPluginModal')).hide();
+        } else {
+            alert(result.message || JSON.stringify(result.data));
+        }
+    } catch (e) {
+        alert('Failed to update plugin: ' + e.message);
+    }
+});
+// Delete Plugin
+async function deletePlugin(id) {
+    if (!confirm('Are you sure you want to delete this plugin?')) return;
+    try {
+        const res = await fetch(`/api/plugins/parsers/${id}?confirm=true`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            loadPlugins();
+        } else {
+            alert(result.message || JSON.stringify(result.data));
+        }
+    } catch (e) {
+        alert('Failed to delete plugin: ' + e.message);
+    }
+}
+// Toggle Plugin Status
+async function togglePluginStatus(id, currentStatus) {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    try {
+        const res = await fetch(`/api/plugins/parsers/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ status: newStatus })
+        });
+        const result = await res.json();
+        if (result.status === 'success') {
+            loadPlugins();
+        } else {
+            alert(result.message || JSON.stringify(result.data));
+        }
+    } catch (e) {
+        alert('Failed to update plugin status: ' + e.message);
+    }
+}
+// --- Database Tools/Admin JS ---
+function renderDbTableHealth(tables) {
+    // Sort tables alphabetically
+    tables.sort((a, b) => a.name.localeCompare(b.name));
+    // Split into two columns
+    const mid = Math.ceil(tables.length / 2);
+    const col1 = tables.slice(0, mid);
+    const col2 = tables.slice(mid);
+    let html = '<div class="col-md-6"><ul class="list-group mb-3">';
+    for (const t of col1) {
+        html += dbTableHealthRow(t);
+    }
+    html += '</ul></div><div class="col-md-6"><ul class="list-group mb-3">';
+    for (const t of col2) {
+        html += dbTableHealthRow(t);
+    }
+    html += '</ul></div>';
+    document.getElementById('dbTableHealthRows').innerHTML = html;
+}
+function dbTableHealthRow(t) {
+    let color = t.status === 'healthy' ? '#00e07f' : (t.status === 'warning' ? '#ffd700' : '#ff0033');
+    let icon = t.status === 'healthy' ? 'bi-check-circle-fill' : (t.status === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-x-circle-fill');
+    return `<li class="list-group-item d-flex align-items-center justify-content-between" style="background:#23243a;color:#fff;border:none;border-radius:0.7rem;margin-bottom:0.5rem;box-shadow:0 2px 8px #00e0ff22;">
+        <div class="d-flex align-items-center">
+            <span class="bi ${icon}" style="color:${color};font-size:1.3rem;margin-right:0.7rem;"></span>
+            <span style="font-weight:600;">${t.name}</span>
+        </div>
+        <div style="font-size:0.98rem;">
+            <span style="color:#a259f7;">Cols:</span> ${t.columns} &nbsp; <span style="color:#00e0ff;">Rows:</span> ${t.rows}
+            ${t.details ? `<span class="ms-2 text-warning">${t.details}</span>` : ''}
+        </div>
+    </li>`;
+}
+// Fetch and render on load
+function loadDbTableHealth() {
+    fetch('/api/admin/db/health', {credentials:'include'})
+        .then(r=>r.json()).then(data=>{
+            if(data.status==='success') renderDbTableHealth(data.data);
+        });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    loadDbTableHealth();
+    document.getElementById('runDbAuditBtn').onclick = function() {
+        document.getElementById('dbAuditProgress').innerHTML = '<span class="spinner-border text-info"></span> Running audit...';
+        fetch('/api/admin/db/audit', {method:'POST',credentials:'include'})
+            .then(r=>r.text()).then(txt=>{
+                document.getElementById('dbAuditProgress').innerHTML = `<pre style='color:#00e0ff;background:#181a20;border-radius:0.7rem;padding:1em;'>${txt}</pre>`;
+                loadDbTableHealth();
+            });
+    };
+});
+function updateCrawlerStatusPanel(data) {
+    // If all values are N/A or missing, show Idle
+    if (!data || data.current_task === undefined || data.current_task === null || data.current_task === 'N/A' || data.current_task === '') {
+        document.getElementById('crawlerStatusPanel').innerHTML = '<div class="text-muted">Idle (No jobs running)</div>';
+        return;
+    }
+    // ... existing rendering logic ...
+}
+</script>
+{% endblock %} 

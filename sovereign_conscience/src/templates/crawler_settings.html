@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Crawler Settings - Medusa{% endblock %}
+{% set page = 'crawler_settings' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Crawler Settings</h2>
+
+    <!-- Core Settings Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Core Settings</h5>
+            <form id="coreSettingsForm">
+                <div class="mb-3">
+                    <label for="userAgent" class="form-label">User-Agent String
+                        <span data-bs-toggle="tooltip" title="The HTTP User-Agent sent with each request. Some sites may block unknown agents."><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <input type="text" class="form-control" id="userAgent" name="user_agent" value="MedusaCrawler/1.0 (+https://github.com/yourusername/medusa)">
+                </div>
+                <div class="mb-3">
+                    <label for="politenessDelay" class="form-label">Politeness Delay (seconds)
+                        <span data-bs-toggle="tooltip" title="Minimum delay between requests to the same domain. Helps avoid bans and server overload."><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <input type="number" class="form-control" id="politenessDelay" name="politeness_delay" value="3" min="1" max="60">
+                </div>
+                <div class="mb-3">
+                    <label for="maxDepth" class="form-label">Default Crawl Depth
+                        <span data-bs-toggle="tooltip" title="How many link levels deep the crawler will go from the starting page."><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <input type="number" class="form-control" id="maxDepth" name="max_depth" value="3" min="1" max="10">
+                </div>
+                <div class="mb-3">
+                    <label for="scope" class="form-label">Crawl Scope
+                        <span data-bs-toggle="tooltip" title="Restrict crawling to the same domain, allow subdomains, or no restrictions."><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <select class="form-select" id="scope" name="scope">
+                        <option value="domain">Same Domain Only</option>
+                        <option value="subdomains">Allow Subdomains</option>
+                        <option value="all">No Restrictions</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Core Settings</button>
+                <span id="coreSettingsMsg" class="ms-3"></span>
+            </form>
+        </div>
+    </div>
+
+    <!-- Content Filtering Card -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Content Filtering</h5>
+            <form id="filterSettingsForm">
+                <div class="mb-3">
+                    <label for="includePatterns" class="form-label">Include URLs (Regex/Keywords)
+                        <span data-bs-toggle="tooltip" title="Only crawl URLs matching these patterns. One per line. E.g., /docs/ or .*\.pdf$"><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <textarea class="form-control" id="includePatterns" name="include_patterns" rows="2" placeholder="/docs/\n.*\.pdf$"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="excludePatterns" class="form-label">Exclude URLs (Regex/Keywords)
+                        <span data-bs-toggle="tooltip" title="Skip URLs matching these patterns. One per line. E.g., /logout/ or .*\.jpg$"><i class="bi bi-info-circle"></i></span>
+                    </label>
+                    <textarea class="form-control" id="excludePatterns" name="exclude_patterns" rows="2" placeholder="/logout/\n.*\.jpg$"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Filtering Settings</button>
+                <span id="filterSettingsMsg" class="ms-3"></span>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scheduling Card (Placeholder for future) -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Scheduling <span class="badge bg-secondary">Coming Soon</span></h5>
+            <p class="text-muted">Configure automatic crawl schedules (daily, weekly, custom). This feature will be available in a future update.</p>
+        </div>
+    </div>
+
+    <!-- Advanced Network Card (Placeholder for future) -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Advanced Network <span class="badge bg-secondary">Coming Soon</span></h5>
+            <p class="text-muted">Configure proxy settings, per-domain politeness, and resource allocation. This feature will be available in a future update.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Core Settings: Load and Save
+async function loadCoreSettings() {
+    try {
+        const response = await fetch('/api/crawler/core-settings');
+        const data = await response.json();
+        document.getElementById('userAgent').value = data.user_agent || '';
+        document.getElementById('politenessDelay').value = data.politeness_delay || 3;
+        document.getElementById('maxDepth').value = data.max_depth || 3;
+        document.getElementById('scope').value = data.scope || 'domain';
+    } catch (error) {
+        document.getElementById('coreSettingsMsg').textContent = 'Failed to load settings.';
+        document.getElementById('coreSettingsMsg').className = 'text-danger ms-3';
+    }
+}
+
+document.getElementById('coreSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    try {
+        const response = await fetch('/api/crawler/core-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            document.getElementById('coreSettingsMsg').textContent = 'Settings saved!';
+            document.getElementById('coreSettingsMsg').className = 'text-success ms-3';
+        } else {
+            document.getElementById('coreSettingsMsg').textContent = result.error || 'Failed to save settings.';
+            document.getElementById('coreSettingsMsg').className = 'text-danger ms-3';
+        }
+    } catch (error) {
+        document.getElementById('coreSettingsMsg').textContent = 'Failed to save settings.';
+        document.getElementById('coreSettingsMsg').className = 'text-danger ms-3';
+    }
+});
+
+// Load on page ready
+window.addEventListener('DOMContentLoaded', loadCoreSettings);
+
+// Content Filtering: Load and Save
+async function loadFilterSettings() {
+    try {
+        const response = await fetch('/api/crawler/filter-settings');
+        const data = await response.json();
+        document.getElementById('includePatterns').value = data.include_patterns || '';
+        document.getElementById('excludePatterns').value = data.exclude_patterns || '';
+    } catch (error) {
+        document.getElementById('filterSettingsMsg').textContent = 'Failed to load filtering settings.';
+        document.getElementById('filterSettingsMsg').className = 'text-danger ms-3';
+    }
+}
+
+document.getElementById('filterSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    try {
+        const response = await fetch('/api/crawler/filter-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            document.getElementById('filterSettingsMsg').textContent = 'Filtering settings saved!';
+            document.getElementById('filterSettingsMsg').className = 'text-success ms-3';
+        } else {
+            document.getElementById('filterSettingsMsg').textContent = result.error || 'Failed to save filtering settings.';
+            document.getElementById('filterSettingsMsg').className = 'text-danger ms-3';
+        }
+    } catch (error) {
+        document.getElementById('filterSettingsMsg').textContent = 'Failed to save filtering settings.';
+        document.getElementById('filterSettingsMsg').className = 'text-danger ms-3';
+    }
+});
+
+// Load on page ready
+window.addEventListener('DOMContentLoaded', loadFilterSettings);
+</script>
+{% endblock %} 

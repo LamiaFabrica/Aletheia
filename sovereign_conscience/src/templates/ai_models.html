@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}Medusa Interface - Medusa{% endblock %}
+{% set page = 'ai_models' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Medusa Interface</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Medusa's Status</h5>
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Core Intelligence</h6>
+                                    <small class="text-muted">Medusa's primary reasoning system</small>
+                                </div>
+                                <span class="badge bg-success" id="coreStatus">Active</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Learning System</h6>
+                                    <small class="text-muted">Knowledge acquisition and adaptation</small>
+                                </div>
+                                <span class="badge bg-warning" id="learningStatus">Learning</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Decision Making</h6>
+                                    <small class="text-muted">Autonomous decision capabilities</small>
+                                </div>
+                                <span class="badge bg-info" id="decisionStatus">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Interaction Console</h5>
+                    <div class="mb-3">
+                        <textarea class="form-control" id="medusaInput" rows="4" placeholder="Type your message to Medusa..."></textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendToMedusa()">Send Message</button>
+                    <button class="btn btn-secondary" onclick="clearConsole()">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Conversation History</h5>
+                    <div id="conversationHistory" class="border rounded p-3" style="height: 400px; block-size: 400px; overflow-y: auto;">
+                        <!-- Conversation history will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize conversation history
+let conversationHistory = [];
+
+function sendToMedusa() {
+    const input = document.getElementById('medusaInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    // Add user message to history
+    addToHistory('user', message);
+    
+    // Clear input
+    input.value = '';
+    
+    // Send to Medusa
+    fetch('/api/medusa/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            addToHistory('error', data.error);
+        } else {
+            addToHistory('medusa', data.response);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        addToHistory('error', 'Failed to communicate with Medusa');
+    });
+}
+
+function addToHistory(sender, message) {
+    const history = document.getElementById('conversationHistory');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : ''}`;
+    
+    const bubble = document.createElement('div');
+    bubble.className = `d-inline-block p-3 rounded ${
+        sender === 'user' ? 'bg-primary' : 
+        sender === 'error' ? 'bg-danger' : 'bg-secondary'
+    }`;
+    bubble.style.maxWidth = '80%';
+    
+    const timestamp = new Date().toLocaleTimeString();
+    bubble.innerHTML = `
+        <div class="small text-${sender === 'user' ? 'light' : 'light'} mb-1">
+            ${sender === 'user' ? 'You' : sender === 'error' ? 'Error' : 'Medusa'} - ${timestamp}
+        </div>
+        <div>${message}</div>
+    `;
+    
+    messageDiv.appendChild(bubble);
+    history.appendChild(messageDiv);
+    history.scrollTop = history.scrollHeight;
+    
+    // Store in conversation history
+    conversationHistory.push({
+        sender,
+        message,
+        timestamp: new Date().toISOString()
+    });
+}
+
+function clearConsole() {
+    const history = document.getElementById('conversationHistory');
+    history.innerHTML = '';
+    conversationHistory = [];
+}
+
+// Handle Enter key in input
+document.getElementById('medusaInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendToMedusa();
+    }
+});
+
+// Update Medusa's status periodically
+function updateMedusaStatus() {
+    fetch('/api/medusa/status')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('coreStatus').textContent = data.core;
+            document.getElementById('coreStatus').className = `badge bg-${getStatusColor(data.core)}`;
+            
+            document.getElementById('learningStatus').textContent = data.learning;
+            document.getElementById('learningStatus').className = `badge bg-${getStatusColor(data.learning)}`;
+            
+            document.getElementById('decisionStatus').textContent = data.decision;
+            document.getElementById('decisionStatus').className = `badge bg-${getStatusColor(data.decision)}`;
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function getStatusColor(status) {
+    switch (status.toLowerCase()) {
+        case 'active':
+        case 'ready':
+            return 'success';
+        case 'learning':
+        case 'processing':
+            return 'warning';
+        case 'error':
+        case 'offline':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+}
+
+// Update status every 30 seconds
+setInterval(updateMedusaStatus, 30000);
+updateMedusaStatus(); // Initial update
+</script>
+{% endblock %} 

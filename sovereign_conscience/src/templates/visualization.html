@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}Visualization - Medusa{% endblock %}
+{% set page = 'visualization' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Security Visualization</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Distribution</h5>
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Port Usage</h5>
+                    <canvas id="portUsageChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Vulnerability Trends</h5>
+                    <canvas id="vulnerabilityTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Service Distribution</h5>
+                    <canvas id="serviceDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Risk Score Timeline</h5>
+                    <canvas id="riskScoreTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// --- Chart.js chart instances ---
+let riskDistributionChart, portUsageChart, vulnerabilityTrendsChart, serviceDistributionChart, riskScoreTimelineChart;
+
+function initCharts() {
+    // Risk Distribution Chart
+    riskDistributionChart = new Chart(document.getElementById('riskDistributionChart').getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: ['#ef4444', '#f59e0b', '#10b981'] }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+    // Port Usage Chart
+    portUsageChart = new Chart(document.getElementById('portUsageChart').getContext('2d'), {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Port Usage', data: [], backgroundColor: '#7c3aed' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+    // Vulnerability Trends Chart
+    vulnerabilityTrendsChart = new Chart(document.getElementById('vulnerabilityTrendsChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Vulnerabilities', data: [], borderColor: '#ef4444', tension: 0.1 }] },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
+    });
+    // Service Distribution Chart
+    serviceDistributionChart = new Chart(document.getElementById('serviceDistributionChart').getContext('2d'), {
+        type: 'pie',
+        data: { labels: [], datasets: [{ data: [], backgroundColor: [ '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899' ] }] },
+        options: { responsive: true, plugins: { legend: { position: 'right' } } }
+    });
+    // Risk Score Timeline Chart
+    riskScoreTimelineChart = new Chart(document.getElementById('riskScoreTimelineChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'High Risk Events', data: [], borderColor: '#7c3aed', tension: 0.1, fill: true, backgroundColor: 'rgba(124, 58, 237, 0.1)' }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+    // Initial load
+    updateCharts();
+}
+
+document.addEventListener('DOMContentLoaded', initCharts);
+
+// --- Update charts with real data from API ---
+async function updateCharts() {
+    try {
+        // Optionally show a loading spinner here
+        const response = await fetch('/api/visualization/data');
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        // --- Risk Distribution ---
+        // Example: { 'High Risk': 10, 'Medium Risk': 20, 'Low Risk': 30 }
+        const rd = data.risk_distribution || {};
+        riskDistributionChart.data.labels = Object.keys(rd);
+        riskDistributionChart.data.datasets[0].data = Object.values(rd);
+        riskDistributionChart.update();
+        // --- Port Usage ---
+        // Example: { '80': 10, '443': 20, ... }
+        const pu = data.port_usage || {};
+        portUsageChart.data.labels = Object.keys(pu);
+        portUsageChart.data.datasets[0].data = Object.values(pu);
+        portUsageChart.update();
+        // --- Vulnerability Trends ---
+        // Example: { '2024-06-01': 5, '2024-06-02': 7, ... }
+        const vt = data.vulnerability_trends || {};
+        vulnerabilityTrendsChart.data.labels = Object.keys(vt);
+        vulnerabilityTrendsChart.data.datasets[0].data = Object.values(vt);
+        vulnerabilityTrendsChart.update();
+        // --- Service Distribution ---
+        // Example: { 'HTTP': 10, 'SSH': 5, ... }
+        const sd = data.service_distribution || {};
+        serviceDistributionChart.data.labels = Object.keys(sd);
+        serviceDistributionChart.data.datasets[0].data = Object.values(sd);
+        serviceDistributionChart.update();
+        // --- Risk Score Timeline ---
+        // Example: { '2024-06-01': 2, '2024-06-02': 3, ... }
+        const rst = data.risk_score_timeline || {};
+        riskScoreTimelineChart.data.labels = Object.keys(rst);
+        riskScoreTimelineChart.data.datasets[0].data = Object.values(rst);
+        riskScoreTimelineChart.update();
+    } catch (error) {
+        // Optionally show an error message in the UI
+        console.error('Error updating charts:', error);
+    }
+}
+// Update charts every 30 seconds
+setInterval(updateCharts, 30000);
+</script>
+{% endblock %} 

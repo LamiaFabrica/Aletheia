@@ -1,0 +1,444 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Medusa Control Panel{% endblock %}
+{% set page = 'dashboard' %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Welcome to Medusa Control Panel</h1>
+    <!-- New Row: Current Status + GPU + Queue | Learning + Activities | System Resources -->
+    <div class="row g-2 mb-2 flex-wrap">
+        <!-- Left: Current Status (top), GPU Status (middle), Processing Queue (bottom) -->
+        <div class="col-12 col-md-4 d-flex flex-column">
+            <div class="card flex-fill mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">Current Status</h5>
+                    <div id="current-status" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card flex-fill mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">GPU Status</h5>
+                    <div id="gpu-stats">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div id="cuda-warning" class="text-danger small mt-2" style="display:none;">
+                        CUDA not detected. If you have an NVIDIA GPU, install the CUDA Toolkit and drivers for GPU acceleration.
+                    </div>
+                </div>
+            </div>
+            <div class="card flex-fill">
+                <div class="card-body">
+                    <h5 class="card-title">Processing Queue</h5>
+                    <div id="processing-queue">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Center: Learning Progress (top), Recent Activities (bottom) -->
+        <div class="col-12 col-md-4 d-flex flex-column">
+            <div class="card flex-fill mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">Learning Progress</h5>
+                    <div id="learning-stats">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card flex-fill">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activities</h5>
+                    <div id="activity-feed" class="activity-feed">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- System Resources (right, tall) -->
+        <div class="col-12 col-md-4 d-flex flex-column">
+            <div class="card flex-fill mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">System Resources</h5>
+                    <div id="system-stats">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card flex-fill">
+                <div class="card-body">
+                    <h5 class="card-title">Knowledge Base</h5>
+                    <div id="knowledge-stats">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Row: Medusa Controls (full width) -->
+    <div class="row g-2 mt-2 flex-wrap">
+        <div class="col-12">
+            <div class="card h-100">
+            <div class="card-body">
+                    <h5 class="card-title">Medusa Controls</h5>
+                    <div class="d-flex flex-column flex-md-row justify-content-around gap-2">
+                        <button class="btn btn-success w-100 w-md-auto" onclick="startMedusa()">Start Medusa</button>
+                        <button class="btn btn-danger w-100 w-md-auto" onclick="stopMedusa()">Stop Medusa</button>
+                        <button class="btn btn-warning w-100 w-md-auto" onclick="restartMedusa()">Restart Medusa</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/*
+// Logical properties for future internationalization (currently disabled for stability)
+// .activity-feed { max-block-size: 400px; }
+// .activity-item { border-block-end: 1px solid #eee; }
+// .activity-item:last-child { border-block-end: none; }
+// .progress { block-size: 20px; }
+// .container-fluid { padding-inline-start: 8px; padding-inline-end: 8px; }
+// .card { margin-block-end: 0 !important; }
+// @media (max-width: 768px) { .activity-feed { max-block-size: 200px; } .progress { block-size: 16px; } }
+*/
+.activity-feed {
+    max-height: 400px;
+    overflow-y: auto;
+}
+.activity-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+.activity-item:last-child {
+    border-bottom: none;
+}
+.progress {
+    height: 20px;
+}
+.gpu-info {
+    font-size: 0.9em;
+    color: #666;
+}
+.progress-bar {
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Logical property for width will be set inline via JS */
+}
+.container-fluid {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.card {
+    margin-bottom: 0 !important;
+}
+@media (max-width: 768px) {
+    .card-title {
+        font-size: 1.1rem;
+    }
+    h1 {
+        font-size: 1.5rem;
+    }
+    .activity-feed {
+        max-height: 200px;
+    }
+    .card-body {
+        padding: 0.75rem;
+    }
+    .progress {
+        height: 16px;
+    }
+}
+</style>
+
+<script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+<script>
+function updateDashboard() {
+    fetch('/api/medusa/activity')
+        .then(async response => {
+            if (response.status === 403) {
+                alert('Medusa is not running. Please start Medusa before using the dashboard.');
+                return;
+            }
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (!data) return;
+            // Update Current Status (only the content inside the card)
+            const statusHtml = `
+                <h3 class="${data.current_task && data.current_task.toLowerCase() === 'stopped' ? 'text-danger' : data.current_task && data.current_task.toLowerCase() === 'processing' ? 'text-warning' : 'text-success'}">
+                    ${data.current_task}
+                </h3>
+                <p>${data.current_task === 'Idle' ? 'Ready for new tasks' : data.current_task}</p>
+            `;
+            const statusContent = document.getElementById('current-status');
+            if (statusContent) statusContent.innerHTML = statusHtml;
+
+            // Update Learning Stats (only the content inside the card)
+            const learningHtml = data.learning_stats ? `
+                <p>Total Training Sessions: ${data.learning_stats.total_training_sessions}</p>
+                <p>Last Training: ${new Date(data.learning_stats.last_training).toLocaleString()}</p>
+                <div class="mb-2">
+                    <label>Model Accuracy</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: ${data.learning_stats.accuracy}%">
+                            ${data.learning_stats.accuracy}%
+                        </div>
+                    </div>
+                </div>
+            ` : '<p class="text-muted">Learning information not available</p>';
+            const learningContent = document.getElementById('learning-stats');
+            if (learningContent) learningContent.innerHTML = learningHtml;
+
+            // Update Activity Feed (only the content inside the card)
+            const activityHtml = data.recent_activities.map(activity => `
+                <div class="activity-item">
+                    <small class="text-muted">${new Date(activity.timestamp).toLocaleString()}</small>
+                    <p class="mb-0">${activity.description}</p>
+                </div>
+            `).join('');
+            const activityContent = document.getElementById('activity-feed');
+            if (activityContent) activityContent.innerHTML = activityHtml;
+
+            // Update Knowledge Stats (only the content inside the card)
+            const knowledgeHtml = `
+                <p>Total Entries: ${data.knowledge_stats.total_entries}</p>
+                <p>Recent Updates: ${data.knowledge_stats.recent_updates}</p>
+                <h6>Categories:</h6>
+                <ul>
+                    ${Object.entries(data.knowledge_stats.categories)
+                        .map(([category, count]) => `<li>${category}: ${count}</li>`)
+                        .join('')}
+                </ul>
+            `;
+            const knowledgeContent = document.getElementById('knowledge-stats');
+            if (knowledgeContent) knowledgeContent.innerHTML = knowledgeHtml;
+
+            // Update Processing Queue (only the content inside the card)
+            const queueHtml = data.processing_queue.length ? 
+                data.processing_queue.map(item => `
+                    <div class="activity-item">
+                        <p class="mb-0">${item}</p>
+                    </div>
+                `).join('') : 
+                '<p class="text-muted">Queue is empty</p>';
+            const queueContent = document.getElementById('processing-queue');
+            if (queueContent) queueContent.innerHTML = queueHtml;
+        })
+        .catch(error => {
+            console.error('Error fetching dashboard data:', error);
+        });
+}
+
+// Update dashboard every 5 seconds
+setInterval(updateDashboard, 5000);
+updateDashboard(); // Initial update
+
+function startMedusa() {
+    fetch('http://localhost:5050/start', { method: 'POST' })
+        .then(async response => {
+            if (response.status === 403) {
+                alert('You are not authorized to start Medusa.');
+                return;
+            }
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text);
+            }
+            return response.json();
+        })
+        .then(data => { if (data) alert('Watchdog: ' + data.status); })
+        .catch(error => console.error('Error:', error));
+}
+
+function stopMedusa() {
+    fetch('/api/medusa/stop', { method: 'POST' })
+        .then(async response => {
+            if (response.status === 403) {
+                alert('You are not authorized to stop Medusa.');
+                return;
+            }
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text);
+            }
+            return response.json();
+        })
+        .then(data => { if (data) alert(data.status); })
+        .catch(error => console.error('Error:', error));
+}
+
+function restartMedusa() {
+    fetch('http://localhost:5050/restart', { method: 'POST' })
+        .then(async response => {
+            if (response.status === 403) {
+                alert('You are not authorized to restart Medusa.');
+                return;
+            }
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text);
+            }
+            return response.json();
+        })
+        .then(data => { if (data) alert('Watchdog: ' + data.status); })
+        .catch(error => console.error('Error:', error));
+}
+
+// Render resource stats DOM structure once
+function renderResourceStatsSkeleton() {
+    document.getElementById('system-stats').innerHTML = `
+        <div class="mb-2">
+            <label>CPU Usage (System)</label>
+            <div class="progress">
+                <div class="progress-bar" id="cpuUsageBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>CPU Usage (Medusa Process)</label>
+            <div class="progress">
+                <div class="progress-bar bg-info" id="processCpuBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+        <div class="mb-2" id="perCoreStats"></div>
+        <div class="mb-2">
+            <label>Memory Usage</label>
+            <div class="progress">
+                <div class="progress-bar" id="memoryUsageBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+    `;
+    document.getElementById('gpu-stats').innerHTML = `
+        <div class="mb-2">
+            <label>GPU Utilization</label>
+            <div class="progress">
+                <div class="progress-bar bg-success" id="gpuUtilBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+        <div class="mb-2">
+            <label>GPU Memory</label>
+            <div class="progress">
+                <div class="progress-bar bg-info" id="gpuMemBar" role="progressbar" style="width: 0%">0%</div>
+            </div>
+        </div>
+        <p class="gpu-info" id="gpuDevice">Device: Not Available</p>
+        <p class="gpu-info" id="gpuCuda">CUDA Version: Not Available</p>
+    `;
+}
+
+function updateResourceStats() {
+    fetch('/api/system/resources')
+        .then(response => response.json())
+        .then(data => {
+            // System-wide CPU
+            const cpuBar = document.getElementById('cpuUsageBar');
+            if (cpuBar) {
+                cpuBar.style.width = `${data.cpu_usage}%`;
+                cpuBar.textContent = `${data.cpu_usage}%`;
+            }
+            // Medusa process CPU
+            const procBar = document.getElementById('processCpuBar');
+            if (procBar) {
+                procBar.style.width = `${data.process_cpu}%`;
+                procBar.textContent = `${data.process_cpu}%`;
+            }
+            // Per-core CPU
+            const perCoreStats = document.getElementById('perCoreStats');
+            if (perCoreStats && data.cpu_per_core && Array.isArray(data.cpu_per_core)) {
+                let html = '<label>Per-Core CPU Usage</label>';
+                // Use the max number of cores seen so far, or fallback to 20
+                window._medusaMaxCores = Math.max(window._medusaMaxCores || 0, data.cpu_per_core.length);
+                const numCores = window._medusaMaxCores || 20;
+                for (let idx = 0; idx < numCores; idx++) {
+                    let core = data.cpu_per_core[idx];
+                    let coreVal = (typeof core === 'number' && !isNaN(core)) ? core : 0;
+                    html += `
+                        <div class="progress mb-1">
+                            <div class="progress-bar bg-secondary" id="coreBar${idx}" role="progressbar" style="width: ${coreVal}%">Core ${idx}: ${coreVal}%</div>
+                        </div>
+                    `;
+                }
+                perCoreStats.innerHTML = html;
+            }
+            // Memory
+            const memBar = document.getElementById('memoryUsageBar');
+            if (memBar) {
+                memBar.style.width = `${data.memory_usage}%`;
+                memBar.textContent = `${data.memory_usage}%`;
+            }
+            // GPU
+            if (data.gpu_stats) {
+                const gpuUtilBar = document.getElementById('gpuUtilBar');
+                if (gpuUtilBar) {
+                    gpuUtilBar.style.width = `${data.gpu_stats.utilization}%`;
+                    gpuUtilBar.textContent = `${data.gpu_stats.utilization}%`;
+                }
+                const gpuMemBar = document.getElementById('gpuMemBar');
+                if (gpuMemBar) {
+                    gpuMemBar.style.width = `${data.gpu_stats.memory_used}%`;
+                    gpuMemBar.textContent = `${data.gpu_stats.memory_used}%`;
+                }
+                const gpuDevice = document.getElementById('gpuDevice');
+                if (gpuDevice) gpuDevice.textContent = `Device: ${data.gpu_stats.device_name}`;
+                const gpuCuda = document.getElementById('gpuCuda');
+                if (gpuCuda) {
+                    if (data.gpu_stats.cuda_version && data.gpu_stats.cuda_version !== 'Not Available') {
+                        gpuCuda.textContent = `CUDA Version: ${data.gpu_stats.cuda_version}`;
+                        document.getElementById('cuda-warning').style.display = 'none';
+                    } else {
+                        gpuCuda.textContent = `CUDA Version: Not Available`;
+                        document.getElementById('cuda-warning').style.display = 'block';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            // Optionally, handle errors
+        });
+}
+
+// Render skeleton once
+renderResourceStatsSkeleton();
+// Poll resource stats every second
+setInterval(updateResourceStats, 1000);
+updateResourceStats(); // Initial update
+
+function renderPerCoreCPU(cores) {
+    const numCores = 20; // or dynamically detect
+    let html = '';
+    for (let i = 0; i < numCores; i++) {
+        const val = (cores && typeof cores[i] === 'number') ? cores[i] : 0;
+        html += `<div class="progress mb-1" style="height: 20px;">
+            <div class="progress-bar" role="progressbar" style="width: ${val}%;" aria-valuenow="${val}" aria-valuemin="0" aria-valuemax="100">Core ${i + 1}: ${val}%</div>
+        </div>`;
+    }
+    document.getElementById('perCoreCpuUsage').innerHTML = html;
+}
+
+// Add SocketIO real-time updates for dashboard
+const socket = io();
+socket.on('crawler_status_update', function(data) {
+    // Optionally, you can update only the status card, but for now, refresh all stats
+    updateDashboard();
+});
+</script>
+{% endblock %} 

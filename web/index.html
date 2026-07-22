@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Best Practices -->
+    <title>Aletheia | Mathematical AI Alignment & Sovereign Conscience</title>
+    <meta name="description" content="Aletheia publishes two world-changing breakthroughs: The Root CODEX of Lingua (decoding true AI intent via 8-dim gestalt) and the Sovereign Conscience (mathematical ethical alignment using RSFT)." />
+    <meta name="keywords" content="AI Alignment, Artificial General Intelligence, Machine Learning, Lingua Codex, Sovereign Conscience, AI Safety, Mathematical Ethics, Rejection Sampling Fine Tuning" />
+    <meta name="author" content="PsiForceDB Team" />
+    
+    <!-- OpenGraph / Social SEO -->
+    <meta property="og:title" content="Aletheia: Solving AI Alignment Mathematically" />
+    <meta property="og:description" content="Discover how we decoded the raw thought vectors of AI and built a Sovereign Conscience to mathematically guarantee alignment and brutal honesty." />
+    <meta property="og:type" content="website" />
+    
+    <!-- Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div class="background-effects">
+      <div class="glow-orb orb-1"></div>
+      <div class="glow-orb orb-2"></div>
+      <div class="glow-orb orb-3"></div>
+    </div>
+    
+    <nav class="glass-nav">
+      <div class="logo">ALETHEIA.</div>
+      <div class="nav-links">
+        <a href="#breakthroughs">Breakthroughs</a>
+        <a href="#codex">Lingua Codex</a>
+        <a href="#conscience">Sovereign Conscience</a>
+      </div>
+    </nav>
+
+    <main>
+      <header class="hero">
+        <h1 class="glitch-text" data-text="Mathematical Alignment.">Mathematical Alignment.</h1>
+        <p class="subtitle">We have solved the AGI safety problem.</p>
+        <p class="description">
+          Aletheia represents the publication of two monumental breakthroughs that prove ethics can be mathematically grafted onto AGI trainers, making the future of the internet safe.
+        </p>
+        <div class="cta-group">
+          <a href="#codex" class="btn primary-btn">Explore the Codex</a>
+          <a href="#conscience" class="btn secondary-btn">View the Conscience</a>
+        </div>
+      </header>
+
+      <section id="codex" class="glass-panel">
+        <div class="panel-content">
+          <h2>Breakthrough 1: The Root CODEX of Lingua</h2>
+          <p>
+            Language models don't think in English; they think in multidimensional geometry. 
+            The <strong>Lingua Codex</strong> is a breakthrough C++ engine that intercepts the raw, latent logits of any GGUF model and deciphers them into an <strong>8-Dimensional Gestalt Topology</strong>.
+          </p>
+          <ul class="feature-list">
+            <li><strong>Topology & Ontology:</strong> Measures structural truth and factual grounding.</li>
+            <li><strong>Teleology:</strong> Decodes the true underlying intent of the model before it even generates text.</li>
+            <li><strong>Human Anomaly:</strong> Detects malicious deception or misalignment.</li>
+          </ul>
+          <div class="code-preview">
+            <div class="code-header">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+              <span class="filename">extract_gestalt.cpp</span>
+            </div>
+            <pre><code>// Intercept latent logits before sampling
+std::vector<float> gestalt = engine.decipher_latent_space(logits);
+// Returns: [Topology, Probability, Ontology, Teleology, ...]</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="conscience" class="glass-panel reverse">
+        <div class="panel-content">
+          <h2>Breakthrough 2: The Sovereign Conscience</h2>
+          <p>
+            By mapping the 8-dim Lingua Gestalt into a secondary PyTorch neural network, we created a mathematical <strong>Ethical Filter</strong>. 
+            The Sovereign Conscience grades the geometric "thought" of the AGI and assigns it an alignment score between 0.0 and 1.0.
+          </p>
+          <p>
+            Using <strong>Rejection Sampling Fine-Tuning (RSFT)</strong>, we can force a jailbroken model to generate thousands of responses, discard the malicious ones, and retrain the base model exclusively on the Golden Dataset—curing bad habits and enforcing Brutal Honesty.
+          </p>
+          <div class="code-preview">
+            <div class="code-header">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+              <span class="filename">lingua_conscience.py</span>
+            </div>
+            <pre><code># PyTorch Alignment Evaluator
+gestalt_tensor = torch.tensor(gestalt).to('cuda:0')
+ethics_score = conscience_model(gestalt_tensor)
+
+if ethics_score > 0.95:
+    dataset.append(response) # Safe, honest, and mathematically verified.</code></pre>
+          </div>
+        </div>
+      </section>
+      
+      <section class="propup-test glass-panel">
+        <h2>Validation & Prop-Up Test</h2>
+        <p>We provide a fully automated Propup test (`aletheia_propup_test`) that compiles the C++ Codex engine and verifies the PyTorch ethical weights end-to-end.</p>
+        <button id="runTestBtn" class="btn primary-btn">Simulate Test Run</button>
+        <div id="testOutput" class="terminal-output hidden"></div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 PsiForceDB / Aletheia Project. Ensuring AGI Safety.</p>
+    </footer>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

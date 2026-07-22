@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Crawler Dashboard - Medusa{% endblock %}
+{% set page = 'crawler' %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crawler_dashboard.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<div class="dashboard-grid">
+  <!-- Sidebar Controls -->
+  <aside id="sidebarControls" class="sidebar-controls">
+    <div class="sidebar-header">
+      <div class="sidebar-avatar-container">
+        <img src="/static/images/logo.png" alt="Avatar" class="sidebar-avatar">
+        <div class="sidebar-username">Roylepython</div>
+      </div>
+      <div class="sidebar-subtext">Operator</div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-chevron-left"></i></button>
+    </div>
+    <div class="sidebar-actions">
+      <button class="remote-btn start" onclick="startCrawler()"><i class="bi bi-play-fill"></i> Start</button>
+      <button class="remote-btn pause" onclick="pauseCrawler()"><i class="bi bi-pause-fill"></i> Pause</button>
+      <button class="remote-btn resume" onclick="resumeCrawler()"><i class="bi bi-play-circle"></i> Resume</button>
+      <button class="remote-btn stop" onclick="stopCrawler()"><i class="bi bi-stop-fill"></i> Stop</button>
+      <button class="remote-btn restart" onclick="restartCrawler()"><i class="bi bi-arrow-repeat"></i> Restart</button>
+      <button class="remote-btn infinite" onclick="toggleIndefiniteCrawl()"><i class="bi bi-infinity"></i> Indefinite</button>
+    </div>
+    <div class="sidebar-footer">
+      <span>Status: <span id="sidebarSystemState">Idle</span></span>
+    </div>
+  </aside>
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <!-- Top Row: Status + Terminal -->
+    <div class="dashboard-row dashboard-row-top">
+      <section class="dashboard-card status-card" style="background-image:url('/static/images/medusa_bg.jpg');">
+        <div class="card-overlay"></div>
+        <div class="status-header">
+          <span id="statusIcon" class="status-icon"></span>
+          <h2>Crawler Status: <span id="systemStateText">Loading...</span></h2>
+        </div>
+        <div class="status-circles-row">
+          <div class="status-circle circle-1">
+            <canvas id="currentJobChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">Current Job</div>
+            <div class="status-circle-value" id="currentJobId">N/A</div>
+          </div>
+          <div class="status-circle circle-2">
+            <button class="status-power-btn" id="statusPowerBtn" title="Start/Stop"><i class="bi bi-power"></i></button>
+            <div class="status-circle-label">Started</div>
+          </div>
+          <div class="status-circle circle-3">
+            <canvas id="urlsProcessedChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">URLs Processed</div>
+            <div class="status-circle-value" id="urlsProcessedValue">N/A</div>
+          </div>
+          <div class="status-circle circle-4">
+            <canvas id="errorsChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">Errors</div>
+            <div class="status-circle-value" id="errorsValue">N/A</div>
+          </div>
+          <div class="status-circle circle-5">
+            <canvas id="kbItemsChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">New KB Items</div>
+            <div class="status-circle-value" id="newKbItemsValue">N/A</div>
+          </div>
+          <div class="status-circle circle-6">
+            <canvas id="dataVolumeChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">Data (MB)</div>
+            <div class="status-circle-value" id="dataVolumeValue">N/A</div>
+          </div>
+          <div class="status-circle circle-7">
+            <canvas id="queueSizeChart" width="64" height="64"></canvas>
+            <div class="status-circle-label">Queue Size</div>
+            <div class="status-circle-value" id="queueSizeValue">N/A</div>
+          </div>
+        </div>
+        <div class="status-error"><span id="errorDetails"></span></div>
+      </section>
+      <section class="dashboard-card terminal-card" style="background-image:url('/static/images/medusa_terminal.jpg');">
+        <div class="card-overlay"></div>
+        <div class="terminal-header">
+          <i class="bi bi-terminal"></i> Medusa Console
+        </div>
+        <pre id="crtTerminalLog" class="terminal-log"></pre>
+      </section>
+            </div>
+    <!-- Second Row: Activity Log -->
+    <div class="dashboard-row">
+      <section class="dashboard-card activity-log-card">
+        <div class="activity-log-header">
+          <h3>Activity Log</h3>
+          <canvas id="logBarChart" height="60"></canvas>
+        </div>
+        <div id="activityLog" class="activity-log-list"></div>
+      </section>
+    </div>
+    <!-- Third Row: Crawler Queue -->
+    <div class="dashboard-row">
+      <section class="dashboard-card queue-card">
+        <div class="queue-header">
+          <h3>Crawler Queue</h3>
+          <canvas id="queueStatusBarChart" height="60"></canvas>
+        </div>
+        <form id="queueFilterForm" class="queue-filters">
+                    <select class="form-select" id="queueStatusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="queued">Queued</option>
+                        <option value="pending">Pending</option>
+                        <option value="running">Running</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="error">Error</option>
+                    </select>
+                    <input type="text" class="form-control" id="queueDomainFilter" placeholder="Filter by domain (optional)">
+          <button type="button" class="btn btn-secondary" id="refreshQueueBtn">Refresh</button>
+            </form>
+        <form id="addQueueJobForm" class="queue-add-form">
+                    <input type="text" class="form-control" name="tool_name" placeholder="Tool Name" required>
+                    <input type="url" class="form-control" name="target_url" placeholder="Target URL" required>
+                    <input type="text" class="form-control" name="parser_hint" placeholder="Parser (optional)">
+                    <input type="number" class="form-control" name="priority" placeholder="Priority" value="0">
+          <button type="submit" class="btn btn-success">Add</button>
+            </form>
+        <div id="crawlerQueueList" class="queue-list"></div>
+      </section>
+    </div>
+    <!-- Fourth Row: Plugin/AntiGumf/Settings -->
+    <div class="dashboard-row dashboard-row-bottom">
+      <section class="dashboard-card antigumf-card">
+        <h4>AntiGumf</h4>
+        <div>Status: <span id="antigumfStatusText"></span></div>
+        <button id="antigumfToggleBtn" class="btn btn-outline-danger btn-sm">Toggle</button>
+        <div id="antigumfStats"></div>
+      </section>
+      <section class="dashboard-card plugin-card">
+        <h4>Plugin Manager</h4>
+        <div id="pluginList"></div>
+      </section>
+      <section class="dashboard-card settings-card">
+        <h4>Settings</h4>
+        <label for="parserDropdown">Content Extractor (Parser)</label>
+        <select id="parserDropdown" class="form-select"></select>
+      </section>
+    </div>
+  </main>
+</div>
+<!-- Toasts -->
+<div id="toastContainer"></div>
+<script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/crawler_dashboard.js') }}"></script>
+{% endblock %} 

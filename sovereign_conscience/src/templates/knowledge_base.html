@@ -1,0 +1,924 @@
+{% extends 'base.html' %}
+{% block title %}Knowledge Base - Medusa{% endblock %}
+{% set page = 'knowledge' %}
+{% block content %}
+<main id="main-content" tabindex="-1" role="main">
+<div class="container-fluid" style="margin-top:2rem;">
+    <div class="row justify-content-center">
+        <div class="col-lg-11">
+            <!-- Tabbed Interface -->
+            <div class="kb-tabs mb-4" style="display:flex;align-items:center;gap:1.5rem;">
+                <button class="kb-tab active" id="tab-general" onclick="switchKBTab('general')">
+                    <span class="bi bi-journal-richtext" style="margin-right:0.5rem;"></span>General KB
+                </button>
+                <button class="kb-tab" id="tab-tools" onclick="switchKBTab('tools')">
+                    <span class="bi bi-tools" style="margin-right:0.5rem;"></span>Tools DB
+                </button>
+                <button class="kb-tab" id="tab-cves" onclick="switchKBTab('cves')">
+                    <span class="bi bi-bug" style="margin-right:0.5rem;"></span>CVEs DB
+                </button>
+                <span class="ms-auto" style="font-size:1.1rem;color:#a259f7;">
+                    <span class="bi bi-lightbulb"></span>
+                    <span style="margin-left:0.3rem;cursor:pointer;" data-bs-toggle="tooltip" title="Advanced search: AND, OR, NOT, quotes for exact, field:value, etc.">Search Help</span>
+                </span>
+            </div>
+            <div id="kb-tab-content">
+                <!-- General KB Tab Content (default) -->
+                <div id="kb-general" class="kb-tab-pane active">
+                    <!-- Existing category-based UI goes here, but visually refreshed -->
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card kb-category-card" style="background:linear-gradient(135deg,#a259f7 0%,#00e0ff 100%);color:#fff;box-shadow:0 4px 24px #a259f733;">
+                                <div class="card-body">
+                                    <span class="bi bi-shield-lock" style="font-size:2rem;"></span>
+                                    <h5 class="mt-2">Security Concepts</h5>
+                                    <p>Core security principles, best practices, and foundational knowledge for operators.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card kb-category-card" style="background:linear-gradient(135deg,#00e0ff 0%,#a259f7 100%);color:#fff;box-shadow:0 4px 24px #00e0ff33;">
+                                <div class="card-body">
+                                    <span class="bi bi-terminal" style="font-size:2rem;"></span>
+                                    <h5 class="mt-2">Scan Examples</h5>
+                                    <p>Step-by-step guides and real-world scan scenarios for Medusa tools.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card kb-category-card" style="background:linear-gradient(135deg,#a259f7 0%,#2d2f36 100%);color:#fff;box-shadow:0 4px 24px #a259f733;">
+                                <div class="card-body">
+                                    <span class="bi bi-lightning" style="font-size:2rem;"></span>
+                                    <h5 class="mt-2">Operator Tips</h5>
+                                    <p>Shortcuts, workflow optimizations, and advanced operator tricks.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Add more categories as needed -->
+                    </div>
+                </div>
+                <!-- Tools DB Tab Content -->
+                <div id="kb-tools" class="kb-tab-pane" style="display:none;">
+                    <div class="d-flex mb-3 align-items-center gap-3">
+                        <input id="tools-search" class="form-control" style="max-width:260px;" placeholder="Search tools...">
+                        <select id="tools-page-size" class="form-select" style="width:90px;">
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span id="tools-table-status" class="ms-2 text-info"></span>
+                        <span class="ms-auto"></span>
+                    </div>
+                    <div id="bulk-action-bar"></div>
+                    <div id="tools-facet-filters"></div>
+                    <div id="tools-db-table"></div>
+                    <div id="tools-pagination" class="mt-3 d-flex justify-content-center"></div>
+                </div>
+                <!-- CVEs DB Tab Content -->
+                <div id="kb-cves" class="kb-tab-pane" style="display:none;">
+                    <div class="d-flex mb-3 align-items-center gap-3">
+                        <input id="cves-search" class="form-control" style="max-width:260px;" placeholder="Search CVEs...">
+                        <select id="cves-page-size" class="form-select" style="width:90px;">
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span id="cves-table-status" class="ms-2 text-info"></span>
+                        <span class="ms-auto"></span>
+                    </div>
+                    <div id="bulk-action-bar"></div>
+                    <div id="cves-facet-filters"></div>
+                    <div id="cves-db-table"></div>
+                    <div id="cves-pagination" class="mt-3 d-flex justify-content-center"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</main>
+
+<!-- Admin Controls (always visible for admin) -->
+{% if current_user.get_id() == 'Roylepython' or current_user.is_admin %}
+<div class="mb-3 d-flex gap-2">
+    <button class="btn btn-success" onclick="showAddEntryModal()"><i class="bi bi-plus-circle"></i> Add Entry</button>
+    <button class="btn btn-primary" onclick="showManageCategoriesModal()"><i class="bi bi-tags"></i> Manage Categories</button>
+    <button class="btn btn-outline-secondary" onclick="exportCurrentTab('csv')"><i class="bi bi-file-earmark-spreadsheet"></i> Export CSV</button>
+    <button class="btn btn-outline-secondary" onclick="exportCurrentTab('json')"><i class="bi bi-file-earmark-code"></i> Export JSON</button>
+</div>
+{% endif %}
+
+<!-- Admin Modals -->
+<div id="kbAdminModals"></div>
+
+<!-- S-Rank Criteria Table -->
+<div class="alert alert-info mt-3">
+  <b>S-Rank Criteria (Tools):</b> All of the following fields must be present and non-empty:<br>
+  <code>website, version, license, categories, tags, supported_os, usage_summary, installation_instructions</code>
+</div>
+
+<!-- S-Rank Modal (hidden, used by JS) -->
+<div class='modal fade' id='sRankModal' tabindex='-1' role='dialog'>
+  <div class='modal-dialog' role='document'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <h5 class='modal-title'></h5>
+        <button type='button' class='close' data-dismiss='modal' aria-label='Close'>
+          <span aria-hidden='true'>&times;</span>
+        </button>
+      </div>
+      <div class='modal-body'></div>
+      <div class='modal-footer'>
+        <button type='button' class='btn btn-secondary' data-dismiss='modal'>Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.kb-tabs {
+    background: #181a20;
+    border-radius: 1.2rem 1.2rem 0 0;
+    padding: 1.2rem 2rem 0.2rem 2rem;
+    box-shadow: 0 2px 12px #a259f744;
+}
+.kb-tab {
+    background: none;
+    border: none;
+    color: #a259f7;
+    font-size: 1.15rem;
+    font-weight: 600;
+    padding: 0.7rem 1.7rem;
+    border-radius: 1.2rem 1.2rem 0 0;
+    transition: background 0.2s, color 0.2s;
+    cursor: pointer;
+}
+.kb-tab.active, .kb-tab:hover {
+    background: linear-gradient(90deg,#a259f7 0%,#00e0ff 100%);
+    color: #fff;
+}
+.kb-tab-pane {
+    background: #23243a;
+    border-radius: 0 0 1.2rem 1.2rem;
+    padding: 2.2rem 2.2rem 2.2rem 2.2rem;
+    min-height: 420px;
+    box-shadow: 0 4px 24px #a259f733;
+    animation: fadeIn 0.5s;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: none; }
+}
+.kb-category-card {
+    border: none;
+    border-radius: 1.2rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+.kb-category-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 8px 32px #00e0ff55;
+}
+</style>
+
+<script>
+// Set window.isAdmin as a boolean for use in JS
+window.isAdmin = {% if current_user.is_admin or current_user.get_id() == 'Roylepython' %}true{% else %}false{% endif %};
+
+function switchKBTab(tab) {
+    document.querySelectorAll('.kb-tab').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.kb-tab-pane').forEach(pane => pane.style.display = 'none');
+    if (tab === 'general') {
+        document.getElementById('tab-general').classList.add('active');
+        document.getElementById('kb-general').style.display = '';
+    } else if (tab === 'tools') {
+        document.getElementById('tab-tools').classList.add('active');
+        document.getElementById('kb-tools').style.display = '';
+        if (!window.toolsTableLoaded) {
+            loadToolsDBTable();
+            window.toolsTableLoaded = true;
+        }
+    } else if (tab === 'cves') {
+        document.getElementById('tab-cves').classList.add('active');
+        document.getElementById('kb-cves').style.display = '';
+        if (!window.cvesTableLoaded) {
+            loadCVEsDBTable();
+            window.cvesTableLoaded = true;
+        }
+    }
+}
+
+// --- Tools Table Logic ---
+let toolsTableState = {
+    page: 1,
+    pageSize: 20,
+    search: '',
+    sort: 'tool_name',
+    sortDir: 'asc',
+    total: 0
+};
+function loadToolsDBTable() {
+    renderToolsTable();
+    attachToolsTableEvents();
+}
+function fetchToolsData() {
+    const params = new URLSearchParams({
+        page: toolsTableState.page,
+        page_size: toolsTableState.pageSize,
+        search: toolsTableState.search,
+        sort: toolsTableState.sort,
+        sort_dir: toolsTableState.sortDir
+    });
+    if (toolsFacets.category) params.append('category', toolsFacets.category);
+    if (toolsFacets.tag) params.append('tags', toolsFacets.tag);
+    if (toolsFacets.os) params.append('supported_os', toolsFacets.os);
+    document.getElementById('tools-table-status').innerHTML = `<span class='spinner-border spinner-border-sm'></span> Loading...`;
+    return fetch(`/api/admin/db/search/tools?${params}`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('tools-table-status').innerHTML = '';
+            return data;
+        })
+        .catch(e => {
+            document.getElementById('tools-table-status').innerHTML = `<span class='text-danger'>Error loading tools</span>`;
+            return {rows: [], total: 0};
+        });
+}
+function renderToolsTable() {
+    fetchToolsData().then(data => {
+        toolsTableState.total = data.total || 0;
+        const rows = data.rows || [];
+        renderToolsFacetFilters();
+        let html = `<div id='bulk-action-bar' role='region' aria-label='Bulk actions'></div>`;
+        html += `<table class='table table-dark table-hover table-bordered align-middle' style='font-size:1rem;' role='table' aria-label='Tools Table'>`;
+        html += `<thead><tr>`;
+        html += `<th scope='col'><input type='checkbox' aria-label='Select all tools' onchange='toggleBulkSelectAll("tools",this.checked,[${rows.map(r=>r.id).join(',')}])'></th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortToolsTable("tool_name")'>Tool Name</th>`;
+        html += `<th scope='col'>Description</th>`;
+        html += `<th scope='col'>Categories</th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortToolsTable("version")'>Version</th>`;
+        html += `<th scope='col'>Supported OS</th>`;
+        html += `<th scope='col'>S-Rank?</th>`;
+        if (window.isAdmin) html += `<th scope='col'>Actions</th>`;
+        html += `</tr></thead><tbody>`;
+        if (rows.length === 0) {
+            html += `<tr><td colspan='${window.isAdmin ? 7 : 6}' class='text-center text-muted'>No tools found.</td></tr>`;
+        } else {
+            for (const row of rows) {
+                const name = row.tool_name || row.name || '[Unnamed]';
+                const medusa_id = row.medusa_id || '';
+                const desc = (row.description || '').length > 120 ? row.description.slice(0,120) + '…' : (row.description || '');
+                const cats = Array.isArray(row.category) ? row.category.join(', ') : (row.category || row.categories || '');
+                const version = row.version || '';
+                const os = Array.isArray(row.supported_os) ? row.supported_os.join(', ') : (row.supported_os || '');
+                html += `<tr data-row='${encodeURIComponent(JSON.stringify(row))}'>`;
+                html += `<td><input type='checkbox' aria-label='Select tool' onchange='toggleBulkSelect("tools",${row.id},this.checked)' ${bulkSelected.tools.has(row.id)?'checked':''}></td>`;
+                html += `<td><a href='/kb/tools/${medusa_id || encodeURIComponent(name)}' style='color:#a259f7;'>${name}</a></td>`;
+                html += `<td>${desc}</td>`;
+                html += `<td>${cats}</td>`;
+                html += `<td>${version}</td>`;
+                html += `<td>${os}</td>`;
+                html += `<td><button class='btn btn-sm btn-outline-info' onclick='showWhyNotSRank(${row.id})' aria-label='Show S-Rank details'>Why Not S-Rank?</button></td>`;
+                if (window.isAdmin) {
+                    html += `<td><button class='btn btn-sm btn-warning me-1' onclick='showEditEntryModalFromRow(this)' aria-label='Edit tool'><i class='bi bi-pencil'></i></button><button class='btn btn-sm btn-danger' onclick='showDeleteEntryModalFromRow(this)' aria-label='Delete tool'><i class='bi bi-trash'></i></button></td>`;
+                }
+                html += `</tr>`;
+            }
+        }
+        html += `</tbody></table>`;
+        document.getElementById('tools-db-table').innerHTML = html;
+        renderToolsPagination();
+        patchAdminRowActions();
+        renderBulkActionBar('tools');
+    });
+}
+function sortToolsTable(col) {
+    if (toolsTableState.sort === col) {
+        toolsTableState.sortDir = toolsTableState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        toolsTableState.sort = col;
+        toolsTableState.sortDir = 'asc';
+    }
+    renderToolsTable();
+}
+function renderToolsPagination() {
+    const totalPages = Math.ceil(toolsTableState.total / toolsTableState.pageSize) || 1;
+    let html = `<nav><ul class='pagination pagination-sm'>`;
+    html += `<li class='page-item${toolsTableState.page === 1 ? ' disabled' : ''}'><a class='page-link' href='#' onclick='gotoToolsPage(${toolsTableState.page-1});return false;'>&laquo;</a></li>`;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || Math.abs(i - toolsTableState.page) <= 2) {
+            html += `<li class='page-item${toolsTableState.page === i ? ' active' : ''}'><a class='page-link' href='#' onclick='gotoToolsPage(${i});return false;'>${i}</a></li>`;
+        } else if (i === toolsTableState.page - 3 || i === toolsTableState.page + 3) {
+            html += `<li class='page-item disabled'><span class='page-link'>…</span></li>`;
+        }
+    }
+    html += `<li class='page-item${toolsTableState.page === totalPages ? ' disabled' : ''}'><a class='page-link' href='#' onclick='gotoToolsPage(${toolsTableState.page+1});return false;'>&raquo;</a></li>`;
+    html += `</ul></nav>`;
+    document.getElementById('tools-pagination').innerHTML = html;
+}
+function gotoToolsPage(page) {
+    if (page < 1) page = 1;
+    toolsTableState.page = page;
+    renderToolsTable();
+}
+function attachToolsTableEvents() {
+    document.getElementById('tools-search').addEventListener('input', debounce(function(e) {
+        toolsTableState.search = e.target.value;
+        toolsTableState.page = 1;
+        renderToolsTable();
+    }, 400));
+    document.getElementById('tools-page-size').addEventListener('change', function(e) {
+        toolsTableState.pageSize = parseInt(e.target.value);
+        toolsTableState.page = 1;
+        renderToolsTable();
+    });
+}
+
+// --- CVEs Table Logic ---
+let cvesTableState = {
+    page: 1,
+    pageSize: 20,
+    search: '',
+    sort: 'cve_id',
+    sortDir: 'asc',
+    total: 0
+};
+function loadCVEsDBTable() {
+    renderCVEsTable();
+    attachCVEsTableEvents();
+}
+function fetchCVEsData() {
+    const params = new URLSearchParams({
+        page: cvesTableState.page,
+        page_size: cvesTableState.pageSize,
+        search: cvesTableState.search,
+        sort: cvesTableState.sort,
+        sort_dir: cvesTableState.sortDir
+    });
+    if (cvesFacets.severity) params.append('cvss_v3_severity', cvesFacets.severity);
+    if (cvesFacets.year) params.append('date_published_from', `${cvesFacets.year}-01-01`);
+    if (cvesFacets.year) params.append('date_published_to', `${cvesFacets.year}-12-31`);
+    document.getElementById('cves-table-status').innerHTML = `<span class='spinner-border spinner-border-sm'></span> Loading...`;
+    return fetch(`/api/admin/db/search/vulnerabilities?${params}`)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('cves-table-status').innerHTML = '';
+            return data;
+        })
+        .catch(e => {
+            document.getElementById('cves-table-status').innerHTML = `<span class='text-danger'>Error loading CVEs</span>`;
+            return {rows: [], total: 0};
+        });
+}
+function renderCVEsTable() {
+    fetchCVEsData().then(data => {
+        cvesTableState.total = data.total || 0;
+        const rows = data.rows || [];
+        renderCVEsFacetFilters();
+        let html = `<div id='bulk-action-bar' role='region' aria-label='Bulk actions'></div>`;
+        html += `<table class='table table-dark table-hover table-bordered align-middle' style='font-size:1rem;' role='table' aria-label='CVEs Table'>`;
+        html += `<thead><tr>`;
+        html += `<th scope='col'><input type='checkbox' aria-label='Select all CVEs' onchange='toggleBulkSelectAll("cves",this.checked,[${rows.map(r=>r.id).join(',')}])'></th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortCVEsTable("cve_id")'>CVE ID</th>`;
+        html += `<th scope='col'>Description</th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortCVEsTable("cvss_v3_severity")'>Severity</th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortCVEsTable("cvss_v3_base_score")'>Base Score</th>`;
+        html += `<th scope='col' style='cursor:pointer;' onclick='sortCVEsTable("date_published")'>Published</th>`;
+        if (window.isAdmin) html += `<th scope='col'>Actions</th>`;
+        html += `</tr></thead><tbody>`;
+        if (rows.length === 0) {
+            html += `<tr><td colspan='${window.isAdmin ? 7 : 6}' class='text-center text-muted'>No CVEs found.</td></tr>`;
+        } else {
+            for (const row of rows) {
+                const cve_id = row.cve_id || '[Unknown]';
+                const medusa_id = row.medusa_id || '';
+                const desc = (row.description || '').length > 150 ? row.description.slice(0,150) + '…' : (row.description || '');
+                const sev = row.cvss_v3_severity || '';
+                const score = row.cvss_v3_base_score || '';
+                const date = row.date_published ? row.date_published.split('T')[0] : '';
+                html += `<tr data-row='${encodeURIComponent(JSON.stringify(row))}'>`;
+                html += `<td><input type='checkbox' aria-label='Select CVE' onchange='toggleBulkSelect("cves",${row.id},this.checked)' ${bulkSelected.cves.has(row.id)?'checked':''}></td>`;
+                html += `<td><a href='/kb/vulnerabilities/${cve_id}' style='color:#a259f7;'>${cve_id}</a></td>`;
+                html += `<td>${desc}</td>`;
+                html += `<td><span style='background:${severityColor(sev)};color:#23243a;padding:2px 8px;border-radius:8px;'>${sev}</span></td>`;
+                html += `<td>${score}</td>`;
+                html += `<td>${date}</td>`;
+                if (window.isAdmin) {
+                    html += `<td><button class='btn btn-sm btn-warning me-1' onclick='showEditEntryModalFromRow(this)' aria-label='Edit CVE'><i class='bi bi-pencil'></i></button><button class='btn btn-sm btn-danger' onclick='showDeleteEntryModalFromRow(this)' aria-label='Delete CVE'><i class='bi bi-trash'></i></button></td>`;
+                }
+                html += `</tr>`;
+            }
+        }
+        html += `</tbody></table>`;
+        document.getElementById('cves-db-table').innerHTML = html;
+        renderCVEsPagination();
+        patchAdminRowActions();
+        renderBulkActionBar('cves');
+    });
+}
+function sortCVEsTable(col) {
+    if (cvesTableState.sort === col) {
+        cvesTableState.sortDir = cvesTableState.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        cvesTableState.sort = col;
+        cvesTableState.sortDir = 'asc';
+    }
+    renderCVEsTable();
+}
+function renderCVEsPagination() {
+    const totalPages = Math.ceil(cvesTableState.total / cvesTableState.pageSize) || 1;
+    let html = `<nav><ul class='pagination pagination-sm'>`;
+    html += `<li class='page-item${cvesTableState.page === 1 ? ' disabled' : ''}'><a class='page-link' href='#' onclick='gotoCVEsPage(${cvesTableState.page-1});return false;'>&laquo;</a></li>`;
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || Math.abs(i - cvesTableState.page) <= 2) {
+            html += `<li class='page-item${cvesTableState.page === i ? ' active' : ''}'><a class='page-link' href='#' onclick='gotoCVEsPage(${i});return false;'>${i}</a></li>`;
+        } else if (i === cvesTableState.page - 3 || i === cvesTableState.page + 3) {
+            html += `<li class='page-item disabled'><span class='page-link'>…</span></li>`;
+        }
+    }
+    html += `<li class='page-item${cvesTableState.page === totalPages ? ' disabled' : ''}'><a class='page-link' href='#' onclick='gotoCVEsPage(${cvesTableState.page+1});return false;'>&raquo;</a></li>`;
+    html += `</ul></nav>`;
+    document.getElementById('cves-pagination').innerHTML = html;
+}
+function gotoCVEsPage(page) {
+    if (page < 1) page = 1;
+    cvesTableState.page = page;
+    renderCVEsTable();
+}
+function attachCVEsTableEvents() {
+    document.getElementById('cves-search').addEventListener('input', debounce(function(e) {
+        cvesTableState.search = e.target.value;
+        cvesTableState.page = 1;
+        renderCVEsTable();
+    }, 400));
+    document.getElementById('cves-page-size').addEventListener('change', function(e) {
+        cvesTableState.pageSize = parseInt(e.target.value);
+        cvesTableState.page = 1;
+        renderCVEsTable();
+    });
+}
+// --- Utility ---
+function debounce(fn, ms) {
+    let timer;
+    return function(...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+}
+function severityColor(sev) {
+    if (!sev) return '#23243a';
+    if (sev.toUpperCase().includes('CRIT')) return '#ff0033';
+    if (sev.toUpperCase().includes('HIGH')) return '#ff9900';
+    if (sev.toUpperCase().includes('MED')) return '#ffd700';
+    if (sev.toUpperCase().includes('LOW')) return '#00e0ff';
+    return '#23243a';
+}
+
+// --- Main content landmark for skip-to-content ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Default to General KB tab
+    switchKBTab('general');
+    // Add tooltip for search help
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        el.addEventListener('click', showSearchHelpModal);
+    });
+    if (window.bootstrap) {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+});
+// --- Modal focus/return logic ---
+let lastActiveElement = null;
+function openModalAndFocus(modalId) {
+    lastActiveElement = document.activeElement;
+    new bootstrap.Modal(document.getElementById(modalId)).show();
+    focusFirstInput(modalId);
+}
+function closeAdminModal() {
+    document.getElementById('kbAdminModals').innerHTML = '';
+    if (lastActiveElement) {
+        setTimeout(() => { try { lastActiveElement.focus(); } catch(e){} }, 100);
+    }
+}
+// --- Patch all modal openers to use openModalAndFocus ---
+// (showAddEntryModal, showEditEntryModal, showDeleteEntryModal, showEditCategoryModal, showManageCategoriesModal, showSearchHelpModal)
+// Already handled in previous code edits.
+// --- Table refresh logic ---
+function reloadCurrentTab() {
+    if (getCurrentTab() === 'tools') renderToolsTable();
+    else if (getCurrentTab() === 'vulnerabilities') renderCVEsTable();
+    else switchKBTab('general');
+}
+// --- Ensure all admin actions call reloadCurrentTab after success ---
+// Already handled in submitAddEntry, submitEditEntry, submitDeleteEntry, bulkDelete, category actions.
+// --- Clean up: Remove any unused or duplicate code (already done in previous edits) ---
+// --- End final polish ---
+
+// --- Category cache for forms ---
+let kbCategories = {tools: [], knowledge: []};
+async function loadCategoriesForTab(tab) {
+    const catType = (tab === 'tools') ? 'tools' : 'knowledge';
+    const res = await fetch(`/api/admin/categories/${catType}`);
+    const data = await res.json();
+    if (data.status === 'success') kbCategories[catType] = data.categories;
+    else kbCategories[catType] = [];
+}
+// --- Patch getFieldsForTab to include category dropdown ---
+function getFieldsForTab(tab) {
+    if (tab === 'tools') return ['name','description','supported_os','medusa_id','category'];
+    if (tab === 'vulnerabilities') return ['cve_id','description','cvss_v3_severity','cvss_v3_base_score','date_published'];
+    return ['title','content','source','type','timestamp','category'];
+}
+// --- Patch showAddEntryModal and showEditEntryModal to use dropdown ---
+async function showAddEntryModal() {
+    const tab = getCurrentTab();
+    await loadCategoriesForTab(tab);
+    let fields = getFieldsForTab(tab);
+    let formHtml = fields.map(f => {
+        if (f === 'category') {
+            const catType = (tab === 'tools') ? 'tools' : 'knowledge';
+            return `<div class='mb-2'><label class='form-label'>Category</label><select class='form-select' name='category'>` +
+                kbCategories[catType].map(cat => `<option value='${cat.name}'>${cat.name}</option>`).join('') +
+                `</select></div>`;
+        } else if (f === 'supported_os' && tab === 'tools') {
+            return `<div class='mb-2'><label class='form-label'>Supported OS (comma-separated)</label><textarea class='form-control' name='supported_os'></textarea></div>`;
+        } else {
+            return `<div class='mb-2'><label class='form-label'>${f}</label><input class='form-control' name='${f}'></div>`;
+        }
+    }).join('');
+    document.getElementById('kbAdminModals').innerHTML = `
+    <div class='modal fade' id='addEntryModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog' aria-labelledby='addEntryTitle'>
+      <div class='modal-dialog'><div class='modal-content'>
+        <div class='modal-header'><h5 class='modal-title' id='addEntryTitle'>Add ${tab} Entry</h5><button type='button' class='btn-close' onclick='closeAdminModal()' aria-label='Close'></button></div>
+        <div class='modal-body'><form id='addEntryForm'>${formHtml}</form></div>
+        <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Cancel</button><button class='btn btn-success' onclick='submitAddEntry()'>Add</button></div>
+      </div></div>
+    </div>`;
+    new bootstrap.Modal(document.getElementById('addEntryModal')).show();
+    focusFirstInput('addEntryModal');
+}
+async function showEditEntryModal(row) {
+    const tab = getCurrentTab();
+    await loadCategoriesForTab(tab);
+    let fields = getFieldsForTab(tab);
+    let formHtml = fields.map(f => {
+        if (f === 'category') {
+            const catType = (tab === 'tools') ? 'tools' : 'knowledge';
+            return `<div class='mb-2'><label class='form-label'>Category</label><select class='form-select' name='category'>` +
+                kbCategories[catType].map(cat => `<option value='${cat.name}'${row.category===cat.name?' selected':''}>${cat.name}</option>`).join('') +
+                `</select></div>`;
+        } else if (f === 'supported_os' && tab === 'tools') {
+            let osVal = row && row.supported_os ? (Array.isArray(row.supported_os) ? row.supported_os.join(', ') : row.supported_os) : '';
+            return `<div class='mb-2'><label class='form-label'>Supported OS (comma-separated)</label><textarea class='form-control' name='supported_os'>${osVal}</textarea></div>`;
+        } else {
+            return `<div class='mb-2'><label class='form-label'>${f}</label><input class='form-control' name='${f}' value='${row[f]||''}'></div>`;
+        }
+    }).join('');
+    document.getElementById('kbAdminModals').innerHTML = `
+    <div class='modal fade' id='editEntryModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog' aria-labelledby='editEntryTitle'>
+      <div class='modal-dialog'><div class='modal-content'>
+        <div class='modal-header'><h5 class='modal-title' id='editEntryTitle'>Edit ${tab} Entry</h5><button type='button' class='btn-close' onclick='closeAdminModal()' aria-label='Close'></button></div>
+        <div class='modal-body'><form id='editEntryForm'>${formHtml}</form></div>
+        <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Cancel</button><button class='btn btn-warning' onclick='submitEditEntry(${row.id})'>Save</button></div>
+      </div></div>
+    </div>`;
+    new bootstrap.Modal(document.getElementById('editEntryModal')).show();
+    focusFirstInput('editEntryModal');
+}
+function showDeleteEntryModal(row) {
+    const tab = getCurrentTab();
+    document.getElementById('kbAdminModals').innerHTML = `
+    <div class='modal fade' id='deleteEntryModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog' aria-labelledby='deleteEntryTitle'>
+      <div class='modal-dialog'><div class='modal-content'>
+        <div class='modal-header'><h5 class='modal-title' id='deleteEntryTitle'>Delete ${tab} Entry</h5><button type='button' class='btn-close' onclick='closeAdminModal()' aria-label='Close'></button></div>
+        <div class='modal-body'>Are you sure you want to delete this entry?</div>
+        <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Cancel</button><button class='btn btn-danger' onclick='submitDeleteEntry(${row.id})'>Delete</button></div>
+      </div></div>
+    </div>`;
+    new bootstrap.Modal(document.getElementById('deleteEntryModal')).show();
+    focusFirstInput('deleteEntryModal');
+}
+function getCurrentTab() {
+    if (document.getElementById('tab-tools').classList.contains('active')) return 'tools';
+    if (document.getElementById('tab-cves').classList.contains('active')) return 'vulnerabilities';
+    return 'knowledge';
+}
+async function submitAddEntry() {
+    const tab = getCurrentTab();
+    const form = document.getElementById('addEntryForm');
+    const data = Object.fromEntries(new FormData(form).entries());
+    // Simple validation: require all fields
+    for (const [k, v] of Object.entries(data)) {
+        if (!v) { showToast(`Field '${k}' is required.`, 'danger'); return; }
+    }
+    if (tab === 'tools' && data.supported_os) {
+        data.supported_os = data.supported_os.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    try {
+        const res = await fetch(`/api/admin/db/${tab}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        const result = await res.json();
+        if(result.status==='success'){ closeAdminModal(); reloadCurrentTab(); showToast('Entry added!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+async function submitEditEntry(id) {
+    const tab = getCurrentTab();
+    const form = document.getElementById('editEntryForm');
+    const data = Object.fromEntries(new FormData(form).entries());
+    for (const [k, v] of Object.entries(data)) {
+        if (!v) { showToast(`Field '${k}' is required.`, 'danger'); return; }
+    }
+    if (tab === 'tools' && data.supported_os) {
+        data.supported_os = data.supported_os.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    try {
+        const res = await fetch(`/api/admin/db/${tab}/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        const result = await res.json();
+        if(result.status==='success'){ closeAdminModal(); reloadCurrentTab(); showToast('Entry updated!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+async function submitDeleteEntry(id) {
+    const tab = getCurrentTab();
+    try {
+        const res = await fetch(`/api/admin/db/${tab}/${id}`, {method:'DELETE'});
+        const result = await res.json();
+        if(result.status==='success'){ closeAdminModal(); reloadCurrentTab(); showToast('Entry deleted!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+function showToast(msg, type='info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0 show`;
+    toast.role = 'alert';
+    toast.innerHTML = `<div class='d-flex'><div class='toast-body'>${msg}</div><button type='button' class='btn-close btn-close-white ms-auto me-2' data-bs-dismiss='toast'></button></div>`;
+    document.body.appendChild(toast);
+    setTimeout(()=>toast.remove(), 3500);
+}
+// --- Export ---
+function exportCurrentTab(fmt) {
+    const tab = getCurrentTab();
+    window.open(`/api/admin/db/export/${tab}/${fmt}`,'_blank');
+}
+// --- Patch table rows to add edit/delete buttons for admin ---
+function patchAdminRowActions() {
+    if (!window.isAdmin) return;
+    // No longer needed: actions are now rendered inline in table rows.
+}
+function showEditEntryModalFromRow(btn) {
+    const tr = btn.closest('tr');
+    const row = JSON.parse(decodeURIComponent(tr.getAttribute('data-row')));
+    showEditEntryModal(row);
+}
+function showDeleteEntryModalFromRow(btn) {
+    const tr = btn.closest('tr');
+    const row = JSON.parse(decodeURIComponent(tr.getAttribute('data-row')));
+    showDeleteEntryModal(row);
+}
+function showSearchHelpModal() {
+    document.getElementById('kbAdminModals').innerHTML = `
+    <div class='modal fade' id='searchHelpModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog'>
+      <div class='modal-dialog'><div class='modal-content'>
+        <div class='modal-header'><h5 class='modal-title'>Advanced Search Help</h5><button type='button' class='btn-close' onclick='closeAdminModal()'></button></div>
+        <div class='modal-body'>
+          <ul>
+            <li><b>AND, OR, NOT</b> — Combine terms (e.g., <code>linux AND scanner</code>)</li>
+            <li><b>Quotes</b> — Exact match (e.g., <code>"nmap"</code>)</li>
+            <li><b>Field search</b> — <code>field:value</code> (e.g., <code>version:7.93</code>)</li>
+            <li><b>Wildcards</b> — <code>*</code> for partial (e.g., <code>os:win*</code>)</li>
+            <li><b>Range</b> — <code>score:[7 TO 10]</code></li>
+          </ul>
+          <p>All search is case-insensitive. Multiple filters can be combined.</p>
+        </div>
+        <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Close</button></div>
+      </div></div>
+    </div>`;
+    new bootstrap.Modal(document.getElementById('searchHelpModal')).show();
+}
+function showWhyNotSRank(id) {
+    fetch(`/api/quality/missing_fields/tools/${id}`)
+        .then(r => r.json())
+        .then(data => {
+            let msg = '';
+            if (data.rank === 'S') {
+                msg = `<span class='badge badge-success'>S-Rank Achieved!</span>`;
+            } else {
+                msg = `<b>Missing fields for S-Rank:</b><ul>` + data.missing.map(f => `<li>${f}</li>`).join('') + `</ul>`;
+                msg += `<b>Current Rank:</b> <span class='badge badge-info'>${data.rank}</span> &nbsp; <b>Score:</b> ${data.score}%`;
+            }
+            showModal('Why Not S-Rank?', msg);
+        });
+}
+function showModal(title, body) {
+    var modal = document.getElementById('sRankModal');
+    modal.querySelector('.modal-title').innerHTML = title;
+    modal.querySelector('.modal-body').innerHTML = body;
+    $(modal).modal('show');
+}
+// --- Category reordering in Manage Categories modal ---
+function showManageCategoriesModal() {
+    const tab = getCurrentTab();
+    const catType = (tab === 'tools') ? 'tools' : 'knowledge';
+    fetch(`/api/admin/categories/${catType}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.status !== 'success') { showToast('Failed to load categories', 'danger'); return; }
+            let cats = data.categories || [];
+            let html = `<div class='modal fade' id='manageCategoriesModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog'>
+              <div class='modal-dialog'><div class='modal-content'>
+                <div class='modal-header'><h5 class='modal-title'>Manage Categories (${catType})</h5><button type='button' class='btn-close' onclick='closeAdminModal()'></button></div>
+                <div class='modal-body'>
+                  <ul class='list-group mb-3' id='cat-list'>`;
+            cats.forEach((cat, i) => {
+                html += `<li class='list-group-item d-flex justify-content-between align-items-center'>
+                  <span>${cat.name}</span>
+                  <span>
+                    <button class='btn btn-sm btn-secondary me-1' onclick='moveCategory("${catType}",${cat.id},-1)' ${i===0?'disabled':''}><i class='bi bi-arrow-up'></i></button>
+                    <button class='btn btn-sm btn-secondary me-1' onclick='moveCategory("${catType}",${cat.id},1)' ${i===cats.length-1?'disabled':''}><i class='bi bi-arrow-down'></i></button>
+                    <button class='btn btn-sm btn-warning me-1' onclick='showEditCategoryModal(${cat.id}, "${catType}", "${cat.name.replace(/"/g, '&quot;')}")'><i class='bi bi-pencil'></i></button>
+                    <button class='btn btn-sm btn-danger' onclick='deleteCategory(${cat.id}, "${catType}")'><i class='bi bi-trash'></i></button>
+                  </span>
+                </li>`;
+            });
+            html += `</ul>
+                  <div class='input-group'>
+                    <input id='new-cat-name' class='form-control' placeholder='New category name'>
+                    <button class='btn btn-success' onclick='addCategory("${catType}")'><i class='bi bi-plus'></i> Add</button>
+                  </div>
+                </div>
+                <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Close</button></div>
+              </div></div>
+            </div>`;
+            document.getElementById('kbAdminModals').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('manageCategoriesModal')).show();
+        });
+    }
+function moveCategory(catType, catId, direction) {
+    fetch(`/api/admin/categories/${catType}/${catId}/move`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({direction})
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') { showManageCategoriesModal(); }
+        else showToast(data.message || 'Error', 'danger');
+    });
+}
+// --- Bulk Actions State ---
+let bulkSelected = {tools: new Set(), cves: new Set()};
+function renderBulkActionBar(tab) {
+    const sel = tab === 'tools' ? bulkSelected.tools : bulkSelected.cves;
+    if (sel.size === 0) {
+        document.getElementById('bulk-action-bar').innerHTML = '';
+        return;
+    }
+    document.getElementById('bulk-action-bar').innerHTML = `
+        <div class='alert alert-secondary d-flex align-items-center gap-2 mb-2'>
+            <b>${sel.size} selected</b>
+            <button class='btn btn-danger btn-sm' onclick='bulkDelete("${tab}")'><i class='bi bi-trash'></i> Delete</button>
+            <button class='btn btn-outline-secondary btn-sm' onclick='bulkExport("${tab}","csv")'><i class='bi bi-file-earmark-spreadsheet'></i> Export CSV</button>
+            <button class='btn btn-outline-secondary btn-sm' onclick='bulkExport("${tab}","json")'><i class='bi bi-file-earmark-code'></i> Export JSON</button>
+            <button class='btn btn-link btn-sm' onclick='clearBulkSelection("${tab}")'>Clear</button>
+        </div>`;
+}
+function clearBulkSelection(tab) {
+    if (tab === 'tools') bulkSelected.tools.clear();
+    else bulkSelected.cves.clear();
+    renderBulkActionBar(tab);
+    if (tab === 'tools') renderToolsTable();
+    else renderCVEsTable();
+}
+function toggleBulkSelect(tab, id, checked) {
+    const sel = tab === 'tools' ? bulkSelected.tools : bulkSelected.cves;
+    if (checked) sel.add(id); else sel.delete(id);
+    renderBulkActionBar(tab);
+}
+function toggleBulkSelectAll(tab, checked, ids) {
+    const sel = tab === 'tools' ? bulkSelected.tools : bulkSelected.cves;
+    if (checked) ids.forEach(id => sel.add(id)); else sel.clear();
+    renderBulkActionBar(tab);
+    if (tab === 'tools') renderToolsTable();
+    else renderCVEsTable();
+}
+async function bulkDelete(tab) {
+    if (!confirm('Delete all selected?')) return;
+    const sel = tab === 'tools' ? bulkSelected.tools : bulkSelected.cves;
+    for (const id of sel) {
+        await fetch(`/api/admin/db/${tab}/${id}`, {method:'DELETE'});
+    }
+    showToast('Deleted selected entries','success');
+    clearBulkSelection(tab);
+}
+function bulkExport(tab, fmt) {
+    const sel = tab === 'tools' ? bulkSelected.tools : bulkSelected.cves;
+    if (!sel.size) return;
+    // For now, just open export for all, or implement filter by IDs later
+    window.open(`/api/admin/db/export/${tab}/${fmt}`,'_blank');
+}
+// --- Faceted Search State ---
+let toolsFacets = {category: '', tag: '', os: ''};
+let cvesFacets = {severity: '', year: ''};
+function renderToolsFacetFilters() {
+    // For demo, use categories/tags/OS from current data (could be cached or fetched)
+    const cats = kbCategories.tools.map(c => c.name);
+    let html = `<div class='d-flex gap-2 mb-2'>`;
+    html += `<select class='form-select' style='width:140px' onchange='setToolsFacet("category",this.value)'><option value=''>All Categories</option>` + cats.map(c => `<option${toolsFacets.category===c?' selected':''}>${c}</option>`).join('') + `</select>`;
+    html += `<input class='form-control' style='width:120px' placeholder='Tag' value='${toolsFacets.tag}' oninput='setToolsFacet("tag",this.value)'>`;
+    html += `<input class='form-control' style='width:120px' placeholder='OS' value='${toolsFacets.os}' oninput='setToolsFacet("os",this.value)'>`;
+    html += `<button class='btn btn-outline-secondary btn-sm' onclick='clearToolsFacets()'>Clear</button>`;
+    html += `</div>`;
+    document.getElementById('tools-facet-filters').innerHTML = html;
+}
+function setToolsFacet(facet, value) {
+    toolsFacets[facet] = value;
+    toolsTableState.page = 1;
+    renderToolsTable();
+}
+function clearToolsFacets() {
+    toolsFacets = {category: '', tag: '', os: ''};
+    renderToolsFacetFilters();
+    renderToolsTable();
+}
+function renderCVEsFacetFilters() {
+    let html = `<div class='d-flex gap-2 mb-2'>`;
+    html += `<select class='form-select' style='width:120px' onchange='setCVEsFacet("severity",this.value)'><option value=''>All Severities</option>`;
+    ['CRITICAL','HIGH','MEDIUM','LOW'].forEach(s => html += `<option${cvesFacets.severity===s?' selected':''}>${s}</option>`);
+    html += `</select>`;
+    html += `<input class='form-control' style='width:100px' placeholder='Year' value='${cvesFacets.year}' oninput='setCVEsFacet("year",this.value)'>`;
+    html += `<button class='btn btn-outline-secondary btn-sm' onclick='clearCVEsFacets()'>Clear</button>`;
+    html += `</div>`;
+    document.getElementById('cves-facet-filters').innerHTML = html;
+}
+function setCVEsFacet(facet, value) {
+    cvesFacets[facet] = value;
+    cvesTableState.page = 1;
+    renderCVEsTable();
+}
+function clearCVEsFacets() {
+    cvesFacets = {severity: '', year: ''};
+    renderCVEsFacetFilters();
+    renderCVEsTable();
+}
+// --- Accessibility: Set focus to first input in modals ---
+function focusFirstInput(modalId) {
+    setTimeout(() => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            const input = modal.querySelector('input,select,textarea,button');
+            if (input) input.focus();
+        }
+    }, 200);
+}
+// --- Add skip-to-content link for screen readers ---
+document.body.insertAdjacentHTML('afterbegin', `<a href="#main-content" class="visually-hidden-focusable" tabindex="0" style="position:absolute;left:0;top:0;z-index:1000;background:#fff;color:#23243a;padding:8px;">Skip to main content</a>`);
+
+function showEditCategoryModal(catId, catType, catName) {
+    document.getElementById('kbAdminModals').innerHTML = `
+    <div class='modal fade' id='editCategoryModal' tabindex='-1' style='display:block;' aria-modal='true' role='dialog' aria-labelledby='editCategoryTitle'>
+      <div class='modal-dialog'><div class='modal-content'>
+        <div class='modal-header'><h5 class='modal-title' id='editCategoryTitle'>Edit Category</h5><button type='button' class='btn-close' onclick='closeAdminModal()' aria-label='Close'></button></div>
+        <div class='modal-body'>
+          <form id='editCategoryForm'>
+            <div class='mb-2'><label class='form-label'>Category Name</label><input class='form-control' name='name' value='${catName || ''}' required></div>
+          </form>
+        </div>
+        <div class='modal-footer'><button class='btn btn-secondary' onclick='closeAdminModal()'>Cancel</button><button class='btn btn-warning' onclick='submitEditCategory(${catId}, "${catType}")'>Save</button></div>
+      </div></div>
+    </div>`;
+    new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+    focusFirstInput('editCategoryModal');
+}
+async function submitEditCategory(catId, catType) {
+    const form = document.getElementById('editCategoryForm');
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (!data.name) { showToast("Category name is required.", 'danger'); return; }
+    try {
+        const res = await fetch(`/api/admin/categories/${catType}/${catId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+        const result = await res.json();
+        if(result.status==='success'){ closeAdminModal(); showManageCategoriesModal(); showToast('Category updated!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+async function addCategory(catType) {
+    const input = document.getElementById('new-cat-name');
+    const name = input.value.trim();
+    if (!name) { showToast("Category name is required.", 'danger'); return; }
+    try {
+        const res = await fetch(`/api/admin/categories/${catType}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+        const result = await res.json();
+        if(result.status==='success'){ input.value=''; showManageCategoriesModal(); showToast('Category added!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+async function deleteCategory(catId, catType) {
+    if (!confirm('Delete this category?')) return;
+    try {
+        const res = await fetch(`/api/admin/categories/${catType}/${catId}`, {method:'DELETE'});
+        const result = await res.json();
+        if(result.status==='success'){ showManageCategoriesModal(); showToast('Category deleted!','success'); } else { showToast(result.message||'Error','danger'); }
+    } catch(e){ showToast('Error: '+e,'danger'); }
+}
+</script>
+<!--
+Future Enhancements:
+- Saved searches, custom views
+- Full-text search (FTS)
+- Faceted search with counts
+- Export/print
+- Row selection actions
+- More category cards
+-->
+{% endblock %} 

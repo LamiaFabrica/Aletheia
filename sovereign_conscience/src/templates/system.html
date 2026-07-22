@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+{% block title %}System Configuration - Medusa{% endblock %}
+{% set page = 'system' %}
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">System Configuration</h2>
+    <ul class="nav nav-tabs" id="systemConfigTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="basic-admin-tab" data-bs-toggle="tab" data-bs-target="#basic-admin" type="button" role="tab">Basic Administration</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="plugins-tab" data-bs-toggle="tab" data-bs-target="#plugins" type="button" role="tab">Plugin Management</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="db-tab" data-bs-toggle="tab" data-bs-target="#db" type="button" role="tab">Database Management</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="health-tab" data-bs-toggle="tab" data-bs-target="#health" type="button" role="tab">System Health</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">Advanced</button>
+        </li>
+    </ul>
+    <div class="tab-content mt-3" id="systemConfigTabsContent">
+        <div class="tab-pane fade show active" id="basic-admin" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Ollama Settings</h5>
+                        <div class="mb-3">
+                        <label for="ollamaLanguage" class="form-label">Language</label>
+                        <input type="text" id="ollamaLanguage" class="form-control" onchange="updateOllamaLanguage()">
+                            </div>
+                            <div class="mb-3">
+                        <label for="ollamaModel" class="form-label">Model Selection</label>
+                        <select id="ollamaModel" class="form-select" onchange="updateOllamaModel()"></select>
+                    </div>
+                            </div>
+                            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Medusa Startup Settings</h5>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoStartMedusa" onchange="updateStartupSettings()">
+                        <label class="form-check-label" for="autoStartMedusa">Auto Start Medusa</label>
+                            </div>
+                            <div class="mb-3">
+                        <label for="defaultSystemState" class="form-label">Default System State</label>
+                        <select id="defaultSystemState" class="form-select" onchange="updateStartupSettings()">
+                            <option value="idle">Idle</option>
+                            <option value="active">Active</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                        </div>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">AI Command Settings</h5>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="safeMode" onchange="updateSafeMode()">
+                        <label class="form-check-label" for="safeMode">Safe Mode</label>
+                        </div>
+                            </div>
+                        </div>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <button class="btn btn-success me-2" onclick="medusaQuickAction('start')">Start</button>
+                    <button class="btn btn-warning me-2" onclick="medusaQuickAction('restart')">Restart</button>
+                    <button class="btn btn-danger me-2" onclick="medusaQuickAction('stop')">Stop</button>
+                    <button class="btn btn-dark me-2" onclick="medusaQuickAction('kill')">Kill</button>
+                    <span id="quickActionStatus" class="ms-3"></span>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="plugins" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Plugin Manager</h5>
+                    <div id="pluginManager">
+                        <div class="mb-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="reloadPlugins()">Reload Plugins</button>
+                        </div>
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Version</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pluginList">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                        <div id="pluginManagerStatus" class="text-info"></div>
+                        </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="db" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Database Management (PostgreSQL)</h5>
+                    <div id="dbStatus">Loading...</div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary me-2">Schema Audit</button>
+                        <button class="btn btn-secondary me-2">Backup Database</button>
+                        <button class="btn btn-secondary me-2">Restore Database</button>
+                        <button class="btn btn-outline-info me-2">Open DB Console</button>
+                        <button class="btn btn-outline-success" onclick="togglePgAdmin()">Launch Advanced DB Admin</button>
+                    </div>
+                    <div id="pgAdminEmbed" style="display:none; margin-top:20px; height:600px; border:2px solid #444; border-radius:8px; overflow:hidden;">
+                        <iframe src="/db-admin" style="width:100%; height:100%; border:none;"></iframe>
+                    </div>
+                    <div id="dbActionOutput" class="mt-3" style="white-space:pre; background:#222; color:#0f0; padding:10px; border-radius:5px; display:none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="health" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">System Health & Diagnostics</h5>
+                    <div id="systemHealthStatus">Loading...</div>
+                    <div class="mt-3">
+                        <button class="btn btn-outline-success me-2">Repair All</button>
+                        <button class="btn btn-outline-warning me-2">Clear Cache</button>
+                        <button class="btn btn-outline-info">Recheck Schema</button>
+                        </div>
+                    <div id="systemHealthOutput" class="mt-3" style="white-space:pre; background:#222; color:#0ff; padding:10px; border-radius:5px; display:none;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="advanced" role="tabpanel">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Advanced Settings</h5>
+                    <div id="advancedSettings">Coming soon...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Plugin Manager Modal for Logs -->
+<div class="modal fade" id="pluginLogsModal" tabindex="-1" aria-labelledby="pluginLogsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="pluginLogsModalLabel">Plugin Logs</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="pluginLogsContent" style="background:#222; color:#f88; min-height:200px;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Remove event listeners for non-existent elements
+// document.getElementById('dbType').addEventListener('change', function() { ... });
+// document.getElementById('databaseForm').addEventListener('submit', async function(e) { ... });
+// document.getElementById('loggingForm').addEventListener('submit', async function(e) { ... });
+// document.getElementById('aiCommandToggle').addEventListener('change', async function() { ... });
+
+// Tabbed navigation (Bootstrap 5)
+// Plugin Manager JS (fetch plugin list, enable/disable/reload)
+async function fetchPlugins() {
+    const res = await fetch('/api/plugins/enrichment/list');
+    const plugins = await res.json();
+    const healthRes = await fetch('/api/plugins/enrichment/health');
+    const health = await healthRes.json();
+    const tbody = document.getElementById('pluginList');
+    tbody.innerHTML = '';
+    for (const plugin of plugins) {
+        const h = health[plugin.name] || {};
+        const status = h.status || plugin.status;
+        const badge = statusBadge(status);
+        const lastError = h.last_error ? `<span class='text-danger' title='${h.last_error}'>⚠️</span>` : '';
+        const lastReload = h.last_reload ? new Date(h.last_reload * 1000).toLocaleString() : '';
+        const version = h.version || plugin.version || '';
+        const isCore = plugin.type === 'core' || plugin.lifeblood;
+        const disableBtn = isCore ? 'disabled' : '';
+        const reloadBtn = isCore ? 'disabled' : '';
+        const pluginId = plugin.filename || plugin.file_path || plugin.name;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${plugin.name} ${lastError}</td>
+            <td>${plugin.type || ''}</td>
+            <td>${badge}</td>
+            <td>${version}</td>
+            <td>${plugin.description || ''}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-success" onclick="enablePlugin('${pluginId}')" ${disableBtn}>Enable</button>
+                <button class="btn btn-sm btn-outline-warning" onclick="disablePlugin('${pluginId}')" ${disableBtn}>Disable</button>
+                <button class="btn btn-sm btn-outline-info" onclick="reloadPlugin('${pluginId}')" ${reloadBtn}>Reload</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="showPluginLogs('${pluginId}')">Logs</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="checkPluginUpdate('${pluginId}', this)">Check Update</button>
+                <span class="ms-2" title="Last reload">${lastReload}</span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+}
+function statusBadge(status) {
+    let color = 'secondary';
+    if (status === 'enabled') color = 'success';
+    else if (status === 'disabled') color = 'danger';
+    else if (status === 'reloaded') color = 'info';
+    else if (status === 'error') color = 'danger';
+    return `<span class="badge bg-${color}">${status}</span>`;
+}
+async function reloadPlugins() {
+    document.getElementById('pluginManagerStatus').textContent = 'Reloading plugins...';
+    await fetch('/api/plugins/enrichment/reload', {method: 'POST'});
+    await fetchPlugins();
+    document.getElementById('pluginManagerStatus').textContent = 'Plugins reloaded.';
+}
+async function enablePlugin(name) {
+    await fetch(`/api/plugins/enrichment/enable/${name}`, {method: 'POST'});
+    await fetchPlugins();
+}
+async function disablePlugin(name) {
+    await fetch(`/api/plugins/enrichment/disable/${name}`, {method: 'POST'});
+    await fetchPlugins();
+}
+async function reloadPlugin(name) {
+    await fetch(`/api/plugins/enrichment/reload/${name}`, {method: 'POST'});
+    await fetchPlugins();
+}
+async function showPluginLogs(name) {
+    const res = await fetch(`/api/plugins/enrichment/logs/${name}`);
+    const data = await res.json();
+    document.getElementById('pluginLogsModalLabel').textContent = `Logs: ${name}`;
+    document.getElementById('pluginLogsContent').textContent = (data.logs || []).join('\n') || 'No logs.';
+    const modal = new bootstrap.Modal(document.getElementById('pluginLogsModal'));
+    modal.show();
+}
+async function checkPluginUpdate(name, btn) {
+    btn.textContent = 'Checking...';
+    const res = await fetch(`/api/plugins/enrichment/update/${name}`);
+    const data = await res.json();
+    btn.textContent = data.update_available ? 'Update Available!' : 'Up-to-date';
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add(data.update_available ? 'btn-danger' : 'btn-success');
+    setTimeout(() => {
+        btn.textContent = 'Check Update';
+        btn.classList.remove('btn-danger', 'btn-success');
+        btn.classList.add('btn-outline-primary');
+    }, 3000);
+}
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPlugins();
+    loadOllamaModels();
+    // loadLoggingSettings(); // Disabled: function not defined
+    checkAICommandPluginStatus();
+    loadBasicAdminSettings();
+});
+
+// Function to update system status
+function updateSystemStatus() {
+    fetch('/api/system/status').then(r => r.json()).then(status => {
+        const dbStatus = document.getElementById('dbStatus');
+        if (dbStatus) dbStatus.textContent = status.database;
+        // Remove or comment out modelStatus/resourceStatus if not present
+        // const modelStatus = document.getElementById('modelStatus');
+        // if (modelStatus) modelStatus.textContent = status.models;
+        // const resourceStatus = document.getElementById('resourceStatus');
+        // if (resourceStatus) resourceStatus.textContent = status.resources;
+    });
+}
+
+function getStatusColor(status) {
+    switch (status.toLowerCase()) {
+        case 'connected':
+        case 'active':
+        case 'normal':
+            return 'success';
+        case 'training':
+        case 'warning':
+            return 'warning';
+        case 'disconnected':
+        case 'error':
+        case 'critical':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+}
+
+// Update system status periodically
+// setInterval(updateSystemStatus, 30000); // Update every 30 seconds
+updateSystemStatus(); // Initial update
+
+function loadOllamaModels() {
+    // Only run if element exists
+    const select = document.getElementById('ollamaModel');
+    if (!select) return;
+    fetch('/api/system/ollama/models').then(r => r.json()).then(data => {
+        select.innerHTML = '';
+        (data.models || []).forEach(m => {
+                const opt = document.createElement('option');
+            opt.value = m.name || m;
+            opt.textContent = m.name || m;
+                select.appendChild(opt);
+        });
+    });
+}
+
+async function saveOllamaModel() {
+    const select = document.getElementById('ollamaModelSelect');
+    const model = select.value;
+    const status = document.getElementById('ollamaModelStatus');
+    if (!model) {
+        status.textContent = 'Please select a model.';
+        return;
+    }
+    try {
+        const response = await fetch('/api/system/ollama-model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model })
+        });
+        const result = await response.json();
+        if (result.status === 'ok') {
+            status.textContent = `Model '${model}' saved as default.`;
+        } else {
+            status.textContent = result.error || 'Failed to save model.';
+        }
+    } catch (error) {
+        status.textContent = 'Error saving model.';
+    }
+}
+
+// Load Ollama models on page load
+window.addEventListener('DOMContentLoaded', () => {
+    loadOllamaModels();
+    // loadLoggingSettings(); // Disabled: function not defined
+    checkAICommandPluginStatus();
+    loadBasicAdminSettings();
+});
+
+// Remove or comment out functions that reference missing elements
+// async function loadDatabaseSettings() { ... }
+// async function loadLoggingSettings() { ... }
+// async function loadAICommandSetting() { ... }
+
+async function checkAICommandPluginStatus() {
+    try {
+        const res = await fetch('/api/plugins/enrichment/list');
+        const plugins = await res.json();
+        const aiPlugin = plugins.find(p => p.name === 'AuditKBAgent');
+        const tab = document.getElementById('ai-command-tab');
+        const content = document.getElementById('ai-command');
+        if (!aiPlugin || aiPlugin.status !== 'enabled') {
+            // Hide the tab and content if they exist
+            if (tab) tab.style.display = 'none';
+            if (content) content.style.display = 'none';
+        } else {
+            if (tab) tab.style.display = '';
+            if (content) content.style.display = '';
+        }
+    } catch (e) {
+        // On error, hide the tab for safety if it exists
+        const tab = document.getElementById('ai-command-tab');
+        const content = document.getElementById('ai-command');
+        if (tab) tab.style.display = 'none';
+        if (content) content.style.display = 'none';
+    }
+}
+
+// JS stubs for new admin actions
+function startMedusa() { alert('Start Medusa (to be implemented)'); }
+function restartMedusa() { alert('Restart Medusa (to be implemented)'); }
+function stopMedusa() { alert('Shutdown Medusa (to be implemented)'); }
+function killSwitch() { if(confirm('Are you sure? This will immediately kill all Medusa processes!')) alert('Kill Switch activated (to be implemented)'); }
+// TODO: Integrate with backend APIs for all actions and live status
+
+async function loadBasicAdminSettings() {
+    // Ollama language
+    const langRes = await fetch('/api/system/ollama/language');
+    const langData = await langRes.json();
+    document.getElementById('ollamaLanguage').value = langData.language || 'en';
+
+    // Ollama models
+    const modelsRes = await fetch('/api/system/ollama/models');
+    const modelsData = await modelsRes.json();
+    const modelSelect = document.getElementById('ollamaModel');
+    modelSelect.innerHTML = '';
+    (modelsData.models || []).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.name || m;
+        opt.textContent = m.name || m;
+        modelSelect.appendChild(opt);
+    });
+    // Selected model
+    const selModelRes = await fetch('/api/system/ollama/model');
+    const selModelData = await selModelRes.json();
+    modelSelect.value = selModelData.model || '';
+
+    // Startup settings
+    const startupRes = await fetch('/api/system/startup');
+    const startupData = await startupRes.json();
+    document.getElementById('autoStartMedusa').checked = !!startupData.auto_start;
+    document.getElementById('defaultSystemState').value = startupData.default_state || 'idle';
+
+    // Safe mode
+    const safeRes = await fetch('/api/system/safemode');
+    const safeData = await safeRes.json();
+    document.getElementById('safeMode').checked = !!safeData.safe_mode;
+}
+
+// Handlers for settings
+async function updateOllamaLanguage() {
+    const lang = document.getElementById('ollamaLanguage').value;
+    await fetch('/api/system/ollama/language', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({language: lang})
+    });
+}
+async function updateOllamaModel() {
+    const model = document.getElementById('ollamaModel').value;
+    await fetch('/api/system/ollama/model', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({model})
+    });
+}
+async function updateStartupSettings() {
+    const autoStart = document.getElementById('autoStartMedusa').checked;
+    const defaultState = document.getElementById('defaultSystemState').value;
+    await fetch('/api/system/startup', {
+            method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({auto_start: autoStart, default_state: defaultState})
+    });
+}
+async function updateSafeMode() {
+    const safe = document.getElementById('safeMode').checked;
+    await fetch('/api/system/safemode', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({safe_mode: safe})
+    });
+}
+// Quick actions
+async function medusaQuickAction(action) {
+    const btn = document.getElementById('quickActionStatus');
+    btn.textContent = 'Running...';
+    const res = await fetch('/api/system/quickaction', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action})
+    });
+    const data = await res.json();
+    btn.textContent = data.status || 'Done';
+}
+
+function togglePgAdmin() {
+    const embed = document.getElementById('pgAdminEmbed');
+    embed.style.display = embed.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %} 

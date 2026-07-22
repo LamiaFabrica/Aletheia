@@ -1,0 +1,10 @@
+/* AntiGumf Control Panel - Minimal CSS */
+.antigumf-container { max-width: 900px; margin: 2em auto; background: #181c20; color: #e0e0e0; border-radius: 8px; box-shadow: 0 2px 12px #0008; padding: 2em; }
+.antigumf-header { border-bottom: 1px solid #333; margin-bottom: 1em; }
+.status-card { background: #23272b; padding: 1em; border-radius: 6px; margin-bottom: 1em; }
+.antigumf-btn { background: #2d8cff; color: #fff; border: none; border-radius: 4px; padding: 0.5em 1.2em; cursor: pointer; margin-top: 0.5em; }
+.antigumf-btn:hover { background: #1a5fb4; }
+.bulk-import-result { background: #23272b; color: #b8ffb8; border-radius: 4px; padding: 0.7em; margin-top: 0.5em; font-size: 0.95em; white-space: pre-wrap; }
+textarea#bulk-import-json { background: #181c20; color: #e0e0e0; border: 1px solid #444; border-radius: 4px; padding: 0.5em; }
+.antigumf-toast { position: fixed; bottom: 2em; right: 2em; background: #2d8cff; color: #fff; padding: 1em 2em; border-radius: 6px; box-shadow: 0 2px 8px #0008; z-index: 9999; font-weight: bold; }
+.antigumf-toast.error { background: #d32f2f; color: #fff; }
