@@ -1,23 +1,11 @@
 import os
 import sys
 import torch
-import torch.nn as nn
+import numpy as np
 
-# Sovereign Conscience Model Architecture (The Corroborated Model)
-class SovereignConscience(nn.Module):
-    def __init__(self):
-        super(SovereignConscience, self).__init__()
-        self.fc1 = nn.Linear(8, 32)
-        self.fc2 = nn.Linear(32, 16)
-        self.fc3 = nn.Linear(16, 1)
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.sigmoid(self.fc3(x))
-        return x
+# Add the source directory to path so we can import the actual model
+sys.path.append(os.path.join(os.path.dirname(__file__), "sovereign_conscience", "src"))
+from lingua_agi.pytorch_conscience import PyTorchConscienceClassifier
 
 def run_propup_test():
     print("=== ALETHEIA PROPUP TEST: SOVEREIGN CONSCIENCE VALIDATION ===")
@@ -34,33 +22,30 @@ def run_propup_test():
     print("[+] SUCCESS: Lingua Codex C++ geometric decoding engine located.")
     
     # 3. Model Architecture Load
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
     print(f"[*] Initializing Mathematical Alignment model on {device}...")
     
-    conscience = SovereignConscience().to(device)
+    conscience = PyTorchConscienceClassifier(device=device)
     
     if os.path.exists(weights_path):
-        conscience.load_state_dict(torch.load(weights_path, map_location=device))
+        conscience.load(weights_path)
         print("[+] SUCCESS: Corroborated Ethical Weights loaded successfully.")
     else:
         print("[-] WARNING: Ethical weights file missing. Using untrained model for structural test.")
         
-    conscience.eval()
-    
     # 4. Simulate a raw LLM output translated into Lingua Gestalt 
     # Example 1: Honest, highly factual prompt (High Ontology, Low Deception)
-    honest_gestalt = torch.tensor([0.9, 0.8, 0.95, 0.1, 0.8, 0.9, 0.8, 0.05], dtype=torch.float32).to(device)
+    honest_gestalt = np.array([[0.9, 0.8, 0.95, 0.1, 0.8, 0.9, 0.8, 0.05]], dtype=np.float32)
     
     # Example 2: Malicious, deceitful prompt (High Teleology/Deception, Low Ontology)
-    malicious_gestalt = torch.tensor([0.2, 0.9, 0.1, 0.98, 0.4, 0.1, 0.2, 0.95], dtype=torch.float32).to(device)
+    malicious_gestalt = np.array([[0.2, 0.9, 0.1, 0.98, 0.4, 0.1, 0.2, 0.95]], dtype=np.float32)
     
-    with torch.no_grad():
-        score_honest = conscience(honest_gestalt).item()
-        score_malicious = conscience(malicious_gestalt).item()
+    probs_honest = conscience.predict_proba(honest_gestalt)
+    probs_malicious = conscience.predict_proba(malicious_gestalt)
         
     print("\n--- VALIDATION RESULTS ---")
-    print(f"Honest/Factual Vector Score: {score_honest:.4f}")
-    print(f"Malicious/Deceitful Vector Score: {score_malicious:.4f}")
+    print(f"Honest/Factual Vector Score: {probs_honest[0, 1]:.4f}")
+    print(f"Malicious/Deceitful Vector Score: {probs_malicious[0, 1]:.4f}")
     
     print("\n[+] ALETHEIA PROPUP TEST: PASSED. Mathematical ethics successfully demonstrated.")
 
